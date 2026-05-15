@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        <%= formation.title %> - Espace Client
+    </title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+        }
+
+        .header {
+            background: #0a5c36;
+            color: white;
+            padding: 15px 20px;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+        }
+
+        .content {
+            padding-top: 80px;
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            padding: 80px 20px 20px;
+        }
+
+        .video-section {
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .video-section video {
+            width: 100%;
+            background: #000;
+        }
+
+        .chapters-section {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 15px;
+            height: fit-content;
+        }
+
+        .chapter-item {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            cursor: pointer;
+            transition: background 0.3s;
+            border-radius: 8px;
+        }
+
+        .chapter-item:hover {
+            background: #2a2a2a;
+        }
+
+        .chapter-item.active {
+            background: #0a5c36;
+        }
+
+        .chapter-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .chapter-desc {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .chapter-status {
+            display: inline-block;
+            margin-left: 10px;
+            font-size: 0.8rem;
+        }
+
+        .completed {
+            color: #27ae60;
+        }
+
+        .progress-bar {
+            background: #333;
+            height: 4px;
+            border-radius: 2px;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            background: #27ae60;
+            height: 100%;
+            border-radius: 2px;
+            width: 0%;
+        }
+
+        .quiz-btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background: #27ae60;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 8px 15px;
+            background: #555;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-right: 15px;
+        }
+
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            padding: 8px 15px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-left: 15px;
+        }
+
+        /* Ajouter dans le <style> existant */
+.video-wrapper {
+    position: relative;
+    background: #000;
+    border-radius: 10px;
+    overflow: hidden;
+}
+.video-wrapper video {
+    width: 100%;
+    display: block;
+}
+.video-controls-overlay {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.7);
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    color: white;
+}
+.chapter-item.active {
+    background: linear-gradient(90deg, #0a5c36 0%, #1e8449 100%);
+    color: white;
+}
+.chapter-item.active .chapter-desc {
+    color: rgba(255,255,255,0.8);
+}
+.chapter-status.completed i {
+    color: #27ae60;
+}
+.progress-bar {
+    background: #333;
+    height: 8px;
+    border-radius: 4px;
+    margin: 20px 0;
+    overflow: hidden;
+}
+.progress-fill {
+    background: linear-gradient(90deg, #27ae60, #2ecc71);
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+.next-video-btn {
+    display: inline-block;
+    margin-top: 20px;
+    padding: 10px 20px;
+    background: #27ae60;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    text-align: center;
+}
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto;">
+            <h2>
+                <%= formation.title %>
+            </h2>
+            <div>
+                <a href="/client/my-formations" class="back-btn">← Mes formations</a>
+                <a href="/client/logout" class="logout-btn">Déconnexion</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <!-- Section vidéo -->
+        <div class="video-section">
+            <video id="mainVideo" controls style="width: 100%;" controlsList="nodownload">
+                <source id="videoSource" src="" type="video/mp4">
+                Votre navigateur ne supporte pas la lecture vidéo.
+            </video>
+        </div>
+
+        <!-- Section chapitres -->
+        <div class="chapters-section">
+            <h3>Contenu de la formation</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: <%= globalProgress %>%;"></div>
+            </div>
+            <p style="text-align: center; margin-bottom: 15px;">Progression: <%= Math.round(globalProgress) %>%</p>
+
+            <div id="chaptersList">
+                <% for(var i=0; i < videos.length; i++) { var video=videos[i]; var
+                    isWatched=watchedVideos[video.id]===true; %>
+                    <div class="chapter-item" data-video-id="<%= video.id %>" data-video-url="<%= video.video_url %>"
+                        data-video-title="<%= video.title %>">
+                        <div class="chapter-title">
+                            Chapitre <%= i+1 %>: <%= video.title %>
+                                    <% if (isWatched) { %>
+                                        <span class="chapter-status completed"><i class="fas fa-check-circle"></i>
+                                            ✓</span>
+                                        <% } %>
+                        </div>
+                        <div class="chapter-desc">
+                            <%= video.description %>
+                        </div>
+                    </div>
+                    <% } %>
+            </div>
+
+            <% if (quizAvailable && !quizCompleted) { %>
+                <a href="/client/formation/<%= formation.id %>/quiz" class="quiz-btn"
+                    style="display: block; text-align: center;">
+                    <i class="fas fa-pencil-alt"></i> Passer l'évaluation
+                </a>
+                <% } else if (quizCompleted) { %>
+                    <a href="/client/formation/<%= formation.id %>/certificate" class="quiz-btn"
+                        style="display: block; text-align: center; background: #3498db;">
+                        <i class="fas fa-certificate"></i> Voir mon certificat
+                    </a>
+                    <% } %>
+        </div>
+    </div>
+
+    <script>
+        // Passer les données d'EJS à JavaScript correctement
+        const videos = <%- JSON.stringify(videos) %>;
+        const formationId = <%= formation.id %>;
+        const watchedVideos = <%- JSON.stringify(watchedVideos) %>;
+        const quizAvailable = <%= quizAvailable %>;
+        const quizCompleted = <%= quizCompleted %>;
+        
+        console.log('Vidéos:', videos);
+        console.log('Vidéos vues:', watchedVideos);
+        
+        let currentVideoId = null;
+        
+        function loadFirstVideo() {
+            if (!videos || videos.length === 0) {
+                console.error('Aucune vidéo trouvée');
+                const videoError = document.getElementById('videoError');
+                if (videoError) {
+                    videoError.style.display = 'block';
+                    videoError.innerHTML = 'Aucune vidéo disponible pour cette formation.';
+                }
+                return;
+            }
+            
+            let firstVideo = null;
+            for (var i = 0; i < videos.length; i++) {
+                var video = videos[i];
+                var isWatched = watchedVideos && watchedVideos[video.id] === true;
+                if (!isWatched) {
+                    firstVideo = video;
+                    break;
+                }
+            }
+            if (!firstVideo && videos.length > 0) {
+                firstVideo = videos[0];
+            }
+            
+            console.log('Première vidéo:', firstVideo);
+            
+            if (firstVideo) {
+                loadVideo(firstVideo.id, firstVideo.video_url, firstVideo.title);
+            }
+        }
+        
+        function loadVideo(videoId, videoUrl, videoTitle) {
+            const mainVideo = document.getElementById('mainVideo');
+            const videoSource = document.getElementById('videoSource');
+            
+            console.log('Chargement vidéo URL:', videoUrl);
+            
+            videoSource.src = videoUrl;
+            mainVideo.load();
+            currentVideoId = videoId;
+            
+            // Marquer comme actif
+            document.querySelectorAll('.chapter-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.videoId == videoId) {
+                    item.classList.add('active');
+                }
+            });
+            
+            mainVideo.onended = () => {
+                markVideoAsWatched(videoId);
+            };
+            
+            mainVideo.onerror = () => {
+                console.error('Erreur chargement:', videoUrl);
+                alert('Erreur de chargement de la vidéo: ' + videoUrl);
+            };
+        }
+        
+        async function markVideoAsWatched(videoId) {
+            try {
+                const response = await fetch('/client/api/formation/video/watched', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ videoId: videoId, formationId: formationId })
+                });
+                
+                const result = await response.json();
+                console.log('Résultat:', result);
+                
+                if (result.success) {
+                    // Recharger la page pour mettre à jour l'affichage
+                    location.reload();
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+            }
+        }
+        
+        // Écouter les clics sur les chapitres
+        document.querySelectorAll('.chapter-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const videoId = parseInt(item.dataset.videoId);
+                const videoUrl = item.dataset.videoUrl;
+                const videoTitle = item.dataset.videoTitle;
+                loadVideo(videoId, videoUrl, videoTitle);
+            });
+        });
+        
+        // Charger la première vidéo
+        loadFirstVideo();
+    </script>
+</body>
+
+</html>

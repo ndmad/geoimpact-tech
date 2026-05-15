@@ -1,0 +1,53 @@
+<% include ../partials/admin-header %>
+
+<div class="page-header">
+    <h2>Gestion des formations</h2>
+    <a href="/admin/formations/add" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Ajouter une formation
+    </a>
+</div>
+
+<% if (success_msg) { %>
+    <div class="alert alert-success"><%= success_msg %></div>
+<% } %>
+
+<% if (error_msg) { %>
+    <div class="alert alert-error"><%= error_msg %></div>
+<% } %>
+
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Titre</th>
+            <th>Durée</th>
+            <th>Niveau</th>
+            <th>Catégorie</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% formations.forEach(formation => { %>
+        <tr>
+            <td><%= formation.id %></td>
+            <td><%= formation.title %></td>
+            <td><%= formation.duration %></td>
+            <td><%= formation.level %></td>
+            <td><%= formation.category %></td>
+            <td class="actions">
+                <button onclick="editFormation(<%= formation.id %>)" class="btn-edit">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <a href="/admin/formations/delete/<%= formation.id %>" 
+                   onclick="return confirm('Supprimer cette formation ?')" 
+                   class="btn-delete">
+                    <i class="fas fa-trash"></i>
+                </a>
+            </td>
+        </tr>
+        <% }); %>
+    </tbody>
+</table>
+
+<!-- Modal d'édition (à implémenter) -->
+<% include ../partials/admin-footer %>

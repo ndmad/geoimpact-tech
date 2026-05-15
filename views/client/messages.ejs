@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support - Espace Client</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .dashboard-header {
+            background: var(--primary);
+            color: white;
+            padding: 15px 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .dashboard-main {
+            padding-top: 100px;
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+        .messages-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .message-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .message-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .message-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .message-item:hover {
+            background: #f9f9f9;
+        }
+        .message-item.unread {
+            border-left: 3px solid var(--accent);
+            background: #f0fff4;
+        }
+        .message-subject {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .message-date {
+            font-size: 0.75rem;
+            color: var(--gray);
+        }
+        .message-preview {
+            font-size: 0.85rem;
+            color: var(--gray);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .message-detail {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .reply-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+        .response {
+            background: #e8f5e9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        body.dark-mode .dashboard-main {
+            background: #0f0f1a;
+        }
+        body.dark-mode .message-card {
+            background: #1a1a2e;
+        }
+        body.dark-mode .message-item {
+            border-bottom-color: #2a2a3e;
+        }
+        body.dark-mode .message-item:hover {
+            background: #22223b;
+        }
+        body.dark-mode .reply-box {
+            background: #0f0f1a;
+        }
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group textarea {
+            background: #0f0f1a;
+            border-color: #2a2a3e;
+            color: #e0e0e0;
+        }
+        @media (max-width: 768px) {
+            .messages-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-header">
+        <div class="dashboard-container" style="display: flex; justify-content: space-between; align-items: center;">
+            <h2>Support client</h2>
+            <div>
+                <a href="/client/dashboard" style="color: white; margin-right: 20px;">← Tableau de bord</a>
+                <a href="/client/logout" class="logout-btn">Déconnexion</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="dashboard-main">
+        <div class="dashboard-container">
+            <div class="messages-layout">
+                <!-- Nouveau message -->
+                <div class="message-card">
+                    <h3><i class="fas fa-paper-plane"></i> Nouveau message</h3>
+                    <form action="/client/api/messages/send" method="POST">
+                        <div class="form-group">
+                            <label>Sujet</label>
+                            <input type="text" name="sujet" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Message</label>
+                            <textarea name="message" required></textarea>
+                        </div>
+                        <button type="submit" class="btn">Envoyer</button>
+                    </form>
+                </div>
+
+                <!-- Liste des messages -->
+                <div class="message-card">
+                    <h3><i class="fas fa-history"></i> Historique des messages</h3>
+                    <div class="message-list" id="messageList">
+                        <% if (messages.length === 0) { %>
+                            <p style="text-align: center; color: var(--gray); padding: 40px;">
+                                Aucun message pour le moment
+                            </p>
+                        <% } else { %>
+                            <% messages.forEach(msg => { %>
+                                <div class="message-item <%= !msg.est_repondu ? 'unread' : '' %>" onclick="showMessageDetail(<%= msg.id %>)">
+                                    <div class="message-subject"><%= msg.sujet %></div>
+                                    <div class="message-date"><%= new Date(msg.created_at).toLocaleString() %></div>
+                                    <div class="message-preview"><%= msg.message.substring(0, 80) %>...</div>
+                                </div>
+                            <% }); %>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détail du message (affiché dynamiquement) -->
+            <div id="messageDetail" class="message-card" style="margin-top: 30px; display: none;">
+                <div id="messageDetailContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const messages = <%= JSON.stringify(messages) %>;
+        
+        function showMessageDetail(id) {
+            const msg = messages.find(m => m.id === id);
+            if (!msg) return;
+            
+            const detailDiv = document.getElementById('messageDetail');
+            const contentDiv = document.getElementById('messageDetailContent');
+            
+            contentDiv.innerHTML = `
+                <h3>${escapeHtml(msg.sujet)}</h3>
+                <div style="color: var(--gray); margin-bottom: 15px;">
+                    <i class="far fa-calendar"></i> ${new Date(msg.created_at).toLocaleString()}
+                </div>
+                <div style="padding: 15px; background: #f9f9f9; border-radius: 10px; margin-bottom: 15px;">
+                    ${escapeHtml(msg.message)}
+                </div>
+                ${msg.reponse ? `
+                    <div class="response">
+                        <strong><i class="fas fa-reply"></i> Réponse du support :</strong>
+                        <p style="margin-top: 10px;">${escapeHtml(msg.reponse)}</p>
+                        <small class="message-date">Répondu le ${new Date(msg.repondu_at).toLocaleString()}</small>
+                    </div>
+                ` : `
+                    <div style="padding: 15px; background: #fff3cd; border-radius: 10px;">
+                        <i class="fas fa-clock"></i> En attente de réponse...
+                    </div>
+                `}
+            `;
+            
+            detailDiv.style.display = 'block';
+            detailDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        (function() {
+            const savedDarkMode = localStorage.getItem('darkMode');
+            if (savedDarkMode === null || savedDarkMode === 'true') {
+                document.body.classList.add('dark-mode');
+            }
+        })();
+    </script>
+</body>
+</html>

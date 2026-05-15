@@ -1,0 +1,71 @@
+<% title = 'Contact - GeoImpact Tech' %>
+<% currentPage = 'contact' %>
+<%- include('partials/header') %>
+
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h2>Contactez-nous</h2>
+        <ul class="breadcrumb">
+            <li><a href="/">Accueil</a></li>
+            <li>Contact</li>
+        </ul>
+    </div>
+</section>
+
+<!-- Contact Section -->
+<section class="contact">
+    <div class="container">
+        <div class="section-title">
+            <h2>Restons en contact</h2>
+            <p>Notre équipe est à votre écoute pour répondre à toutes vos questions</p>
+        </div>
+        
+        <div class="contact-container">
+            <div class="contact-info">
+                <h3>Discutons de votre projet</h3>
+                <div class="contact-details">
+                    <p><i class="fas fa-map-marker-alt"></i> Université Cheikh Anta Diop, BP 5005 Dakar-Fann, Sénégal</p>
+                    <p><i class="fas fa-phone"></i> +221 76 792 7887</p>
+                    <p><i class="fas fa-envelope"></i> contact@geoimpacttech.com</p>
+                    <p><i class="fas fa-clock"></i> Lun-Ven: 8h-17h</p>
+                </div>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div>
+            </div>
+            
+            <div class="contact-form">
+                <form id="contactForm">
+                    <input type="text" name="name" placeholder="Votre nom complet" required>
+                    <input type="email" name="email" placeholder="Votre adresse email" required>
+                    <input type="tel" name="phone" placeholder="Votre numéro de téléphone">
+                    <select name="subject">
+                        <option value="" disabled selected>Sélectionnez le motif de contact</option>
+                        <option value="formation">Demande d'information sur les formations</option>
+                        <option value="consulting">Demande de service de consultance</option>
+                        <option value="partnership">Proposition de partenariat</option>
+                        <option value="other">Autre demande</option>
+                    </select>
+                    <textarea name="message" placeholder="Votre message" required></textarea>
+                    <button type="submit" class="btn">Envoyer le message</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Map Section -->
+<section class="map-section">
+    <div class="container">
+        <h2 style="text-align: center; margin-bottom: 1.5rem;">Notre localisation</h2>
+        <div class="map-container">
+            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3859.227425127992!2d-17.4690729246873!3d14.682485085753996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xec172e4d2f3c269%3A0x9e84a6c2c0e2718e!2sUniversit%C3%A9%20Cheikh%20Anta%20Diop%20(UCAD)!5e0!3m2!1sfr!2ssn!4v1719832345678!5m2!1sfr!2ssn" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+    </div>
+</section>
+
+<%- include('partials/footer') %>

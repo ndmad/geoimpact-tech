@@ -1,0 +1,90 @@
+<% title = formation.title + ' - GeoImpact Tech' %>
+<% currentPage = 'formations' %>
+<%- include('partials/header') %>
+
+<script>
+    (function() {
+        const savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode === null || savedDarkMode === 'true') {
+            document.body.classList.add('dark-mode');
+        } else if (savedDarkMode === 'false') {
+            document.body.classList.remove('dark-mode');
+        }
+    })();
+</script>
+
+<!-- Page Header -->
+<section class="page-header" style="height: 40vh;">
+    <div class="container">
+        <h2><%= formation.title %></h2>
+        <ul class="breadcrumb">
+            <li><a href="/">Accueil</a></li>
+            <li><a href="/formations">Formations</a></li>
+            <li><%= formation.title %></li>
+        </ul>
+    </div>
+</section>
+
+<!-- Détail de la formation -->
+<section class="formation-detail" style="padding: 60px 0;">
+    <div class="container">
+        <div class="detail-container" style="max-width: 1000px; margin: 0 auto;">
+            <div class="detail-image" style="margin-bottom: 30px;">
+                <img src="<%= formation.image_url %>" alt="<%= formation.title %>" style="width: 100%; border-radius: 10px;">
+            </div>
+            
+            <div class="detail-content">
+                <div class="detail-meta" style="display: flex; gap: 20px; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; flex-wrap: wrap;">
+                    <span><i class="far fa-clock"></i> <%= formation.duration %></span>
+                    <span><i class="fas fa-chart-line"></i> Niveau : <%= formation.level %></span>
+                    <span><i class="fas fa-tag"></i> <%= formation.category %></span>
+                </div>
+                
+                <div class="detail-description" style="font-size: 1.1rem; line-height: 1.8; margin-bottom: 30px;">
+                    <%= formation.description %>
+                </div>
+                
+                <div class="detail-info" style="background: var(--light); padding: 25px; border-radius: 10px; margin-bottom: 30px;">
+                    <h3>📋 Informations pratiques</h3>
+                    <ul style="margin-top: 15px; list-style: none;">
+                        <li style="margin-bottom: 12px;"><strong>📅 Durée :</strong> <%= formation.duration %></li>
+                        <li style="margin-bottom: 12px;"><strong>📊 Niveau :</strong> <%= formation.level %></li>
+                        <li style="margin-bottom: 12px;"><strong>📍 Modalité :</strong> <%= formation.availability %></li>
+                        <% if (formation.price) { %>
+                        <li style="margin-bottom: 12px;"><strong>💰 Tarif :</strong> <%= formation.price %> €</li>
+                        <% } %>
+                    </ul>
+                </div>
+                
+                <div class="detail-actions" style="display: flex; gap: 20px; justify-content: center; flex-wrap: wrap;">
+                    <a href="/contact" class="btn">
+                        <i class="fas fa-envelope"></i> Demander un devis
+                    </a>
+                    <a href="/formations" class="btn btn-outline">
+                        <i class="fas fa-arrow-left"></i> Retour aux formations
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    .btn-outline {
+        background: transparent;
+        border: 2px solid var(--accent);
+        color: var(--accent);
+    }
+    .btn-outline:hover {
+        background: var(--accent);
+        color: white;
+    }
+    body.dark-mode .detail-info {
+        background: #1a1a2e;
+    }
+    body.dark-mode .detail-meta {
+        border-bottom-color: #2a2a3e;
+    }
+</style>
+
+<%- include('partials/footer') %>

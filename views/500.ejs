@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erreur serveur - GeoImpact Tech</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 100px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .error-content {
+            max-width: 600px;
+            margin: 0 auto;
+            color: white;
+        }
+        
+        .error-code {
+            font-size: 120px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+        }
+        
+        .error-title {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        
+        .error-text {
+            margin-bottom: 30px;
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn-light {
+            background-color: white;
+            color: var(--primary);
+        }
+        
+        .btn-light:hover {
+            background-color: var(--primary);
+            color: white;
+            transform: translateY(-3px);
+        }
+        
+        .btn-outline-light {
+            background-color: transparent;
+            border: 2px solid white;
+            color: white;
+        }
+        
+        .btn-outline-light:hover {
+            background-color: white;
+            color: var(--primary);
+            transform: translateY(-3px);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-page">
+        <div class="error-content">
+            <div class="error-code">500</div>
+            <h1 class="error-title">Erreur interne du serveur</h1>
+            <p class="error-text">Une erreur technique s'est produite. Notre équipe a été notifiée et travaille à résoudre le problème.</p>
+            <div class="error-actions">
+                <a href="/" class="btn btn-light">
+                    <i class="fas fa-home"></i> Retour à l'accueil
+                </a>
+                <a href="/contact" class="btn btn-outline-light">
+                    <i class="fas fa-envelope"></i> Signaler le problème
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

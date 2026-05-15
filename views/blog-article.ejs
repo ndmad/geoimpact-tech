@@ -1,0 +1,369 @@
+<% title = article.title + ' - GeoImpact Tech' %>
+<% currentPage = 'blog' %>
+<%- include('partials/header') %>
+
+<!-- Page Header -->
+<section class="page-header" style="height: 30vh;">
+    <div class="container">
+        <h2><%= article.title %></h2>
+        <ul class="breadcrumb">
+            <li><a href="/">Accueil</a></li>
+            <li><a href="/blog">Blog</a></li>
+            <li><%= article.title %></li>
+        </ul>
+    </div>
+</section>
+
+<!-- Article Section -->
+<section class="blog-page" style="padding: 60px 0;">
+    <div class="container">
+        <div class="blog-container" style="grid-template-columns: 1fr;">
+            <article class="blog-article">
+                <div class="article-img" style="height: 400px;">
+                    <img src="<%= article.image_url %>" alt="<%= article.title %>"
+                         style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div class="article-content">
+                    <div class="article-meta">
+                        <span><i class="far fa-calendar"></i> <%= article.created_at.toLocaleDateString() %></span>
+                        <span><i class="far fa-user"></i> Par <%= article.author %></span>
+                        <span><i class="far fa-folder"></i> <%= article.category %></span>
+                        <span><i class="far fa-eye"></i> <%= article.views %> vues</span>
+                    </div>
+                    
+                    <!-- Boutons de partage (déplacé ici pour meilleure visibilité) -->
+                    <div class="share-buttons" style="margin: 30px 0; padding: 15px 0; border-top: 1px solid #eee; border-bottom: 1px solid #eee;">
+                        <span style="margin-right: 15px; font-weight: 500;">📤 Partager cet article :</span>
+                        <button onclick="shareOnFacebook()" class="share-btn facebook" data-tooltip="Partager sur Facebook">
+                            <i class="fab fa-facebook-f"></i>
+                        </button>
+                        <button onclick="shareOnTwitter()" class="share-btn twitter" data-tooltip="Partager sur Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </button>
+                        <button onclick="shareOnLinkedIn()" class="share-btn linkedin" data-tooltip="Partager sur LinkedIn">
+                            <i class="fab fa-linkedin-in"></i>
+                        </button>
+                        <button onclick="shareOnWhatsApp()" class="share-btn whatsapp" data-tooltip="Partager sur WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
+                        <button onclick="copyShareLink()" class="share-btn copy" data-tooltip="Copier le lien">
+                            <i class="fas fa-link"></i>
+                        </button>
+                    </div>
+                    
+                    <div style="font-size: 1.1rem; line-height: 1.8;">
+                        <%= article.content %>
+                    </div>
+                    
+                    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee;">
+                        <a href="/blog" class="btn">
+                            <i class="fas fa-arrow-left"></i> Retour au blog
+                        </a>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</section>
+
+<!-- Section commentaires -->
+<section class="comments-section" style="padding: 60px 0; background: var(--light);">
+    <div class="container">
+        <div class="comments-container" style="max-width: 800px; margin: 0 auto;">
+            <h3><i class="fas fa-comments"></i> Commentaires</h3>
+            
+            <div id="commentsList" class="comments-list" style="margin: 30px 0;">
+                <div class="loading-spinner" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin"></i> Chargement des commentaires...
+                </div>
+            </div>
+            
+            <div class="comment-form" style="margin-top: 40px; padding: 30px; background: white; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                <h4><i class="fas fa-edit"></i> Laisser un commentaire</h4>
+                <form id="commentForm">
+                    <div class="form-group">
+                        <input type="text" id="commentName" placeholder="Votre nom *" required
+                               style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px;">
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="commentEmail" placeholder="Votre email (optionnel)"
+                               style="width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 5px;">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="commentContent" placeholder="Votre commentaire *" required
+                                  style="width: 100%; padding: 12px; min-height: 120px; border: 1px solid #ddd; border-radius: 5px; resize: vertical;"></textarea>
+                    </div>
+                    <button type="submit" class="btn" id="submitCommentBtn">
+                        <i class="fas fa-paper-plane"></i> Publier le commentaire
+                    </button>
+                </form>
+                <p style="margin-top: 15px; font-size: 12px; color: #666;">
+                    <i class="fas fa-shield-alt"></i> Tous les commentaires sont modérés avant publication
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* Styles pour les boutons de partage */
+    .share-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .share-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+    }
+    
+    .share-btn:hover {
+        transform: translateY(-2px);
+        filter: brightness(1.1);
+    }
+    
+    .share-btn.facebook { background: #1877f2; color: white; }
+    .share-btn.twitter { background: #1da1f2; color: white; }
+    .share-btn.linkedin { background: #0077b5; color: white; }
+    .share-btn.whatsapp { background: #25d366; color: white; }
+    .share-btn.copy { background: #666; color: white; }
+    
+    /* Animation pour le chargement */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .comment-item {
+        animation: fadeIn 0.5s ease;
+    }
+    
+    [data-tooltip] {
+        position: relative;
+    }
+    
+    [data-tooltip]:before {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 5px 10px;
+        background: #333;
+        color: white;
+        font-size: 12px;
+        border-radius: 5px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        pointer-events: none;
+        margin-bottom: 5px;
+    }
+    
+    [data-tooltip]:hover:before {
+        opacity: 1;
+        visibility: visible;
+    }
+</style>
+
+<script>
+    // ============ FONCTIONS DE PARTAGE ============
+    const currentUrl = encodeURIComponent(window.location.href);
+    const articleTitle = encodeURIComponent(document.querySelector('.page-header h2')?.innerText || '<%= article.title %>');
+    
+    function shareOnFacebook() {
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${currentUrl}`, '_blank', 'width=600,height=400');
+    }
+    
+    function shareOnTwitter() {
+        window.open(`https://twitter.com/intent/tweet?text=${articleTitle}&url=${currentUrl}`, '_blank', 'width=600,height=400');
+    }
+    
+    function shareOnLinkedIn() {
+        window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${currentUrl}`, '_blank', 'width=600,height=400');
+    }
+    
+    function shareOnWhatsApp() {
+        window.open(`https://wa.me/?text=${articleTitle}%20${decodeURIComponent(currentUrl)}`, '_blank');
+    }
+    
+    function copyShareLink() {
+        navigator.clipboard.writeText(decodeURIComponent(currentUrl));
+        
+        // Notification temporaire
+        const btn = event.target.closest('.share-btn');
+        const originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => {
+            btn.innerHTML = originalHTML;
+        }, 2000);
+        
+        // Alternative si alert est trop intrusif
+        showToast('Lien copié dans le presse-papier !');
+    }
+    
+    // Fonction toast pour notification discrète
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.innerHTML = message;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 9999;
+            animation: fadeInOut 2s ease;
+            font-size: 14px;
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+    
+    // ============ GESTION DES COMMENTAIRES ============
+    
+    // Échapper le HTML
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    // Formater la date
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('fr-FR', {
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+    
+    // Charger les commentaires
+    async function loadComments() {
+        const articleId = <%= article.id %>;
+        const commentsList = document.getElementById('commentsList');
+        
+        try {
+            const response = await fetch(`/api/blog/${articleId}/comments`);
+            
+            if (!response.ok) {
+                throw new Error('Erreur chargement commentaires');
+            }
+            
+            const comments = await response.json();
+            
+            if (!comments || comments.length === 0) {
+                commentsList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; background: white; border-radius: 10px;">
+                        <i class="fas fa-comment-dots" style="font-size: 48px; color: var(--accent); opacity: 0.5;"></i>
+                        <p style="margin-top: 15px;">Soyez le premier à commenter cet article !</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            commentsList.innerHTML = comments.map(comment => `
+                <div class="comment-item" style="padding: 20px; margin-bottom: 20px; background: white; border-radius: 10px; border-left: 4px solid var(--accent); box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 10px;">
+                        <strong style="color: var(--primary);">
+                            <i class="fas fa-user-circle"></i> ${escapeHtml(comment.author_name)}
+                        </strong>
+                        <small style="color: #999;">
+                            <i class="far fa-clock"></i> ${formatDate(comment.created_at)}
+                        </small>
+                    </div>
+                    <p style="margin-top: 10px; line-height: 1.6;">${escapeHtml(comment.content)}</p>
+                </div>
+            `).join('');
+            
+        } catch (error) {
+            console.error('Erreur chargement commentaires:', error);
+            commentsList.innerHTML = `
+                <div style="text-align: center; padding: 40px; background: white; border-radius: 10px; color: #e74c3c;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 48px;"></i>
+                    <p style="margin-top: 15px;">Impossible de charger les commentaires</p>
+                </div>
+            `;
+        }
+    }
+    
+    // Ajouter un commentaire
+    document.getElementById('commentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const articleId = <%= article.id %>;
+        const name = document.getElementById('commentName').value.trim();
+        const email = document.getElementById('commentEmail').value.trim();
+        const content = document.getElementById('commentContent').value.trim();
+        
+        // Validation
+        if (!name) {
+            alert('Veuillez entrer votre nom');
+            return;
+        }
+        
+        if (!content) {
+            alert('Veuillez écrire un commentaire');
+            return;
+        }
+        
+        if (content.length < 5) {
+            alert('Votre commentaire est trop court (minimum 5 caractères)');
+            return;
+        }
+        
+        // Désactiver le bouton pendant l'envoi
+        const submitBtn = document.getElementById('submitCommentBtn');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
+        
+        try {
+            const response = await fetch(`/api/blog/${articleId}/comments`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ author_name: name, author_email: email, content })
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                alert('✓ Commentaire envoyé ! Il sera visible après modération.');
+                document.getElementById('commentForm').reset();
+                // Recharger les commentaires
+                loadComments();
+            } else {
+                alert('Erreur: ' + (result.error || 'Une erreur est survenue'));
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue lors de l\'envoi du commentaire');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+    
+    // Charger les commentaires au chargement de la page
+    document.addEventListener('DOMContentLoaded', () => {
+        loadComments();
+    });
+</script>
+
+<%- include('partials/footer') %>

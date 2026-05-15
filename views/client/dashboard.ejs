@@ -1,0 +1,106 @@
+<% title = 'Tableau de bord - Espace Client' %>
+<% currentPage = 'client' %>
+<%- include('../partials/header') %>
+
+<script>
+    (function() {
+        const savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode === null || savedDarkMode === 'true') {
+            document.body.classList.add('dark-mode');
+        }
+    })();
+</script>
+
+<section class="client-dashboard" style="padding: 120px 0 60px;">
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap;">
+            <h1>👋 Bonjour <%= client.prenom %> <%= client.nom %></h1>
+            <a href="/client/logout" class="btn btn-outline" style="background: #e74c3c; color: white; border: none;">Déconnexion</a>
+        </div>
+        
+        <!-- Statistiques -->
+        <div class="stats-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px;">
+            <div class="stat-card" style="background: white; padding: 25px; text-align: center; border-radius: 10px;">
+                <h2 style="color: var(--accent); margin-bottom: 10px;"><%= stats.totalFormations %></h2>
+                <p>Formations suivies</p>
+            </div>
+            <div class="stat-card" style="background: white; padding: 25px; text-align: center; border-radius: 10px;">
+                <h2 style="color: var(--accent); margin-bottom: 10px;"><%= stats.enCours %></h2>
+                <p>En cours</p>
+            </div>
+            <div class="stat-card" style="background: white; padding: 25px; text-align: center; border-radius: 10px;">
+                <h2 style="color: var(--accent); margin-bottom: 10px;"><%= stats.termines %></h2>
+                <p>Terminées</p>
+            </div>
+            <div class="stat-card" style="background: white; padding: 25px; text-align: center; border-radius: 10px;">
+                <h2 style="color: var(--accent); margin-bottom: 10px;"><%= stats.messagesNonLus %></h2>
+                <p>Messages</p>
+            </div>
+        </div>
+        
+        <!-- Menu rapide -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px;">
+            <a href="/client/my-formations" class="menu-card" style="background: white; padding: 30px; text-align: center; border-radius: 10px; text-decoration: none;">
+                <div style="font-size: 40px; margin-bottom: 10px;">📚</div>
+                <h3>Mes formations</h3>
+                <p>Voir toutes mes formations</p>
+            </a>
+            <a href="/client/profile" class="menu-card" style="background: white; padding: 30px; text-align: center; border-radius: 10px; text-decoration: none;">
+                <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
+                <h3>Mon profil</h3>
+                <p>Gérer mes informations</p>
+            </a>
+            <a href="/client/messages" class="menu-card" style="background: white; padding: 30px; text-align: center; border-radius: 10px; text-decoration: none;">
+                <div style="font-size: 40px; margin-bottom: 10px;">💬</div>
+                <h3>Support</h3>
+                <p>Contacter le support</p>
+            </a>
+            <a href="/formations" class="menu-card" style="background: white; padding: 30px; text-align: center; border-radius: 10px; text-decoration: none;">
+                <div style="font-size: 40px; margin-bottom: 10px;">🎓</div>
+                <h3>Nouvelles formations</h3>
+                <p>Découvrir les formations</p>
+            </a>
+        </div>
+        
+        <!-- Dernières formations -->
+        <% if (formations.length > 0) { %>
+        <div style="margin-top: 40px;">
+            <h2>📖 Mes dernières formations</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+                <% formations.slice(0, 3).forEach(formation => { %>
+                <div class="formation-card" style="background: white; border-radius: 10px; overflow: hidden;">
+                    <img src="<%= formation.image_url %>" alt="<%= formation.title %>" style="width: 100%; height: 150px; object-fit: cover;">
+                    <div style="padding: 15px;">
+                        <h4><%= formation.title %></h4>
+                        <p style="color: var(--gray); font-size: 14px;"><%= formation.duration %></p>
+                        <span class="badge" style="display: inline-block; padding: 3px 10px; background: var(--accent); color: white; border-radius: 15px; font-size: 12px;">
+                            <%= formation.statut %>
+                        </span>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+        <% } %>
+    </div>
+</section>
+
+<style>
+    body.dark-mode .stat-card,
+    body.dark-mode .menu-card,
+    body.dark-mode .formation-card {
+        background: #1a1a2e !important;
+        color: #e0e0e0;
+    }
+    .btn-outline {
+        background: transparent;
+        border: 2px solid var(--accent);
+        color: var(--accent);
+    }
+    .btn-outline:hover {
+        background: var(--accent);
+        color: white;
+    }
+</style>
+
+<%- include('../partials/footer') %>

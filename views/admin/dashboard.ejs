@@ -1,0 +1,41 @@
+<% include ../partials/admin-header %>
+
+<div class="dashboard-stats">
+    <div class="stat-card">
+        <i class="fas fa-graduation-cap"></i>
+        <h3><%= stats.formations %></h3>
+        <p>Formations</p>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-blog"></i>
+        <h3><%= stats.blog %></h3>
+        <p>Articles</p>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-envelope"></i>
+        <h3><%= stats.messages %></h3>
+        <p>Messages non lus</p>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-users"></i>
+        <h3><%= stats.subscribers %></h3>
+        <p>Abonnés newsletter</p>
+    </div>
+</div>
+
+<div class="quick-actions">
+    <h2>Actions rapides</h2>
+    <div class="actions-grid">
+        <a href="/admin/formations/add" class="action-btn">
+            <i class="fas fa-plus"></i> Ajouter une formation
+        </a>
+        <a href="/admin/blog/add" class="action-btn">
+            <i class="fas fa-plus"></i> Ajouter un article
+        </a>
+        <a href="/admin/messages" class="action-btn">
+            <i class="fas fa-eye"></i> Voir les messages
+        </a>
+    </div>
+</div>
+
+<% include ../partials/admin-footer %>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Limite de tentatives atteinte</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 500px;
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .icon {
+            font-size: 80px;
+            color: #e74c3c;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #27ae60;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin-top: 20px;
+            margin-right: 10px;
+        }
+        .btn-contact {
+            background: #3498db;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h1>⚠️ Limite de tentatives atteinte</h1>
+        <p>Vous avez utilisé vos <strong><%= maxAttempts %></strong> tentatives pour ce quiz.</p>
+        <p>Malheureusement, vous n'avez pas obtenu la moyenne requise (70%).</p>
+        <p>Pour toute question ou pour une nouvelle tentative exceptionnelle, veuillez contacter notre support.</p>
+        <a href="/client/formation/<%= formationId %>/learn" class="btn">
+            <i class="fas fa-arrow-left"></i> Retour à la formation
+        </a>
+        <a href="/contact" class="btn btn-contact">
+            <i class="fas fa-envelope"></i> Contacter le support
+        </a>
+    </div>
+</body>
+</html>

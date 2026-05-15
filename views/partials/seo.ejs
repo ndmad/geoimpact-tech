@@ -1,0 +1,27 @@
+<!-- SEO Meta Tags -->
+<meta charset="UTF-8">
+<meta name="description" content="<%= metaDescription || 'GeoImpact Tech - Cabinet de consultance spécialisé en environnement, développement durable et géomatique. Formations professionnelles et études d\'impact.' %>">
+<meta name="keywords" content="géomatique, environnement, développement durable, SIG, formation, consultance, études d'impact, cartographie, Python géomatique">
+<meta name="author" content="GeoImpact Tech">
+<meta name="robots" content="index, follow">
+<meta name="language" content="French">
+<meta name="revisit-after" content="7 days">
+
+<!-- Open Graph / Facebook -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="<%= currentUrl || 'https://geoimpacttech.com' %>">
+<meta property="og:title" content="<%= seoTitle || 'GeoImpact Tech - Consultance en Environnement et Géomatique' %>">
+<meta property="og:description" content="<%= metaDescription %>">
+<meta property="og:image" content="<%= seoImage || '/images/og-image.jpg' %>">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="<%= seoTitle %>">
+<meta name="twitter:description" content="<%= metaDescription %>">
+<meta name="twitter:image" content="<%= seoImage || '/images/og-image.jpg' %>">
+
+<!-- Canonical URL -->
+<link rel="canonical" href="<%= canonicalUrl || currentUrl || 'https://geoimpacttech.com' %>">
+
+<!-- Sitemap -->
+<link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">

@@ -1,0 +1,236 @@
+<% title = 'Nos Formations - GeoImpact Tech' %>
+<% currentPage = 'formations' %>
+<%- include('partials/header') %>
+
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h2>Nos Formations</h2>
+        <ul class="breadcrumb">
+            <li><a href="/">Accueil</a></li>
+            <li>Formations</li>
+        </ul>
+    </div>
+</section>
+
+<script>
+    // Appliquer le mode sombre immédiatement
+    (function() {
+        const savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode === null || savedDarkMode === 'true') {
+            document.body.classList.add('dark-mode');
+        } else if (savedDarkMode === 'false') {
+            document.body.classList.remove('dark-mode');
+        }
+    })();
+</script>
+
+<!-- Formations Section -->
+<section class="formations">
+    <div class="container">
+        <div class="formation-filters">
+            <button class="filter-btn active" data-filter="all">Toutes</button>
+            <button class="filter-btn" data-filter="environnement">Environnement</button>
+            <button class="filter-btn" data-filter="developpement">Développement</button>
+            <button class="filter-btn" data-filter="geomatique">Géomatique</button>
+        </div>
+        
+        <div class="formation-cards">
+            <% formations.forEach(formation => { 
+                // Conversion Euro -> FCFA (1€ = 655 FCFA)
+                var priceFCFA = formation.price ? Math.round(formation.price * 655) : 0;
+                var hasPrice = priceFCFA > 0;
+            %>
+            <div class="formation-card" data-category="<%= formation.category %>">
+                <div class="formation-img">
+                    <img src="<%= formation.image_url %>" alt="<%= formation.title %>">
+                </div>
+                <div class="formation-content">
+                    <h3><%= formation.title %></h3>
+                    <p><%= formation.description.substring(0, 120) %>...</p>
+                    <ul class="formation-details">
+                        <li><i class="fas fa-clock"></i> Durée: <%= formation.duration %></li>
+                        <li><i class="fas fa-user"></i> Niveau: <%= formation.level %></li>
+                        <li><i class="fas fa-globe"></i> <%= formation.availability %></li>
+                        <% if (hasPrice) { %>
+                        <li><i class="fas fa-money-bill-wave"></i> Prix: <%= priceFCFA.toLocaleString() %> FCFA</li>
+                        <% } %>
+                    </ul>
+                    <div class="formation-actions" style="display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap;">
+                        <a href="/formations/<%= formation.id %>" class="btn" style="flex: 1; text-align: center;">En savoir plus</a>
+                        
+                        <% if (clientConnected) { %>
+                            <% if (hasPrice) { %>
+                                <button onclick="payForFormation(<%= formation.id %>, '<%= formation.title %>', <%= priceFCFA %>)" 
+                                        class="btn btn-enroll" style="flex: 1; background: #f39c12;">
+                                    <i class="fas fa-credit-card"></i> Acheter (<%= priceFCFA.toLocaleString() %> FCFA)
+                                </button>
+                            <% } else { %>
+                                <button onclick="enrollToFormation(<%= formation.id %>)" class="btn btn-enroll" style="flex: 1; background: #27ae60;">
+                                    <i class="fas fa-calendar-plus"></i> S'inscrire
+                                </button>
+                            <% } %>
+                        <% } else { %>
+                            <a href="/client/login" class="btn btn-enroll" style="flex: 1; background: #3498db;">
+                                <i class="fas fa-sign-in-alt"></i> Se connecter pour acheter
+                            </a>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials">
+    <div class="container">
+        <div class="section-title">
+            <h2>Ce que disent nos participants</h2>
+        </div>
+        <div class="testimonial-grid">
+            <% if (typeof testimonials !== 'undefined' && testimonials.length > 0) { %>
+                <% testimonials.forEach(testimonial => { %>
+                <div class="testimonial-card">
+                    <div class="testimonial-text">
+                        <p>"<%= testimonial.content %>"</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-img">
+                            <% if (testimonial.author_image) { %>
+                                <img src="<%= testimonial.author_image %>" alt="<%= testimonial.author_name %>">
+                            <% } else { %>
+                                <img src="https://randomuser.me/api/portraits/<%= testimonial.id % 2 === 0 ? 'women' : 'men' %>/<%= 50 + testimonial.id %>.jpg" alt="<%= testimonial.author_name %>">
+                            <% } %>
+                        </div>
+                        <div class="author-info">
+                            <h4><%= testimonial.author_name %></h4>
+                            <p><%= testimonial.author_role %></p>
+                        </div>
+                    </div>
+                </div>
+                <% }); %>
+            <% } else { %>
+                <p style="text-align: center; grid-column: 1/-1;">Aucun témoignage pour le moment.</p>
+            <% } %>
+        </div>
+    </div>
+</section>
+
+<!-- FAQ Section -->
+<section class="faq">
+    <div class="container">
+        <div class="section-title">
+            <h2>Questions fréquentes</h2>
+        </div>
+        <div class="faq-container">
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Comment s'inscrire à une formation ?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>Pour vous inscrire à l'une de nos formations, connectez-vous à votre espace client, puis cliquez sur "Acheter" pour la formation de votre choix. Le paiement est sécurisé par carte bancaire.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Proposez-vous des formations sur mesure ?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>Oui, nous proposons des formations sur mesure adaptées aux besoins spécifiques de votre organisation. Contactez-nous pour discuter de vos besoins et nous élaborerons un programme personnalisé.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Quels sont les moyens de paiement acceptés ?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>Nous acceptons les paiements par carte bancaire (Visa, MasterCard) via notre plateforme sécurisée Stripe.</p>
+                </div>
+            </div>
+            
+            <div class="faq-item">
+                <div class="faq-question">
+                    <span>Puis-je accéder immédiatement à la formation après paiement ?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </div>
+                <div class="faq-answer">
+                    <p>Oui, immédiatement après validation de votre paiement, vous aurez accès à l'intégralité du contenu de la formation depuis votre espace client.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta">
+    <div class="container">
+        <h2>Vous avez des questions sur nos formations ?</h2>
+        <p>Notre équipe est à votre disposition pour vous conseiller et vous orienter vers la formation la plus adaptée à vos besoins.</p>
+        <a href="/contact" class="btn">Contactez-nous</a>
+    </div>
+</section>
+
+<script>
+    // Fonction d'inscription gratuite (si formation gratuite)
+    async function enrollToFormation(formationId) {
+        if (!confirm('Voulez-vous vraiment vous inscrire à cette formation ?')) {
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/client/api/formations/enroll/${formationId}`, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('✅ Inscription réussie ! Vous pouvez suivre votre formation dans votre espace client.');
+                location.reload();
+            } else {
+                alert('❌ ' + (result.error || 'Erreur lors de l\'inscription'));
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue. Veuillez réessayer.');
+        }
+    }
+    
+    // Fonction de paiement Stripe
+    async function payForFormation(formationId, title, priceFCFA) {
+        if (!confirm(`Confirmez-vous l'achat de la formation "${title}" pour ${priceFCFA.toLocaleString()} FCFA ?`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/payment/api/create-checkout-session', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ formationId: formationId })
+            });
+            
+            const data = await response.json();
+            
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                alert('Erreur lors de la création de la session de paiement: ' + (data.error || ''));
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue. Veuillez réessayer.');
+        }
+    }
+</script>
+
+<%- include('partials/footer') %>

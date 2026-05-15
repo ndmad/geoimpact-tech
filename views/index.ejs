@@ -1,0 +1,131 @@
+<% title = 'GeoImpact Tech - Consultance en Environnement, Développement et Géomatique' %>
+<% currentPage = 'home' %>
+<%- include('partials/header') %>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container hero-content">
+            <h2>Solutions innovantes pour un avenir durable</h2>
+            <p>GeoImpact Tech accompagne ses clients grâce à son expertise en conseil, en études et en formation dans les domaines de l'environnement, du développement durable et de la géomatique.</p>
+            <a href="/contact" class="btn">Nous contacter</a>
+        </div>
+    </section>
+
+<!-- Section des chiffres clés -->
+<section class="stats-section">
+    <div class="container">
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number" data-target="50">0</div>
+                <div class="stat-label">Projets réalisés</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="30">0</div>
+                <div class="stat-label">Clients satisfaits</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="15">0</div>
+                <div class="stat-label">Formations disponibles</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" data-target="5">0</div>
+                <div class="stat-label">Années d'expérience</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+    <!-- Services Section -->
+    <section class="services">
+        <div class="container">
+            <div class="section-title">
+                <h2>Nos Domaines d'Expertise</h2>
+            </div>
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-img">
+                        <img src="https://images.unsplash.com/photo-1542601906990-b4d3fb778b09?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Environnement">
+                    </div>
+                    <div class="service-content">
+                        <h3>Environnement</h3>
+                        <p>Études d'impact, gestion des ressources naturelles, conseil en développement durable et protection de la biodiversité.</p>
+                    </div>
+                </div>
+                <div class="service-card">
+                    <div class="service-img">
+                        <img src="https://images.unsplash.com/photo-1466611653911-95081537e5b7?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" alt="Développement">
+                    </div>
+                    <div class="service-content">
+                        <h3>Développement</h3>
+                        <p>Accompagnement de projets de développement territorial, urbain et rural avec une approche innovante et durable.</p>
+                    </div>
+                </div>
+                <div class="service-card">
+                    <div class="service-img">
+                        <img src="https://images.unsplash.com/photo-1587440871875-191322ee64b0?ixlib=rb-4.0.3&w=600" alt="Géomatique">
+                    </div>
+                    <div class="service-content">
+                        <h3>Géomatique</h3>
+                        <p>Cartographie, SIG, télédétection, analyse spatiale et développement d'applications géolocalisées sur mesure.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Formations Section -->
+    <section class="formations" id="formations">
+        <div class="container">
+            <div class="section-title">
+                <h2>Nos Formations</h2>
+            </div>
+            <div class="formation-cards">
+                <% formations.forEach(formation => { %>
+                <div class="formation-card">
+                    <div class="service-img">
+                        <img src="<%= formation.image_url %>" alt="<%= formation.title %>">
+                    </div>
+                    <div class="formation-content">
+                        <h3><%= formation.title %></h3>
+                        <p><%= formation.description %></p>
+                        <div class="formation-meta">
+                            <span><i class="far fa-clock"></i> <%= formation.duration %></span>
+                            <span><i class="fas fa-chart-line"></i> Niveau : <%= formation.level %></span>
+                        </div>
+                        <a href="/formations/<%= formation.id %>" class="btn btn-small">En savoir plus</a>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Blog Section -->
+    <section class="blog" id="blog">
+        <div class="container">
+            <div class="section-title">
+                <h2>Notre Blog</h2>
+            </div>
+            <div class="blog-grid">
+                <% blogPosts.forEach(post => { %>
+                <div class="blog-card">
+                    <div class="service-img">
+                        <img src="<%= post.image_url %>" alt="<%= post.title %>">
+                    </div>
+                    <div class="blog-content">
+                        <h3><%= post.title %></h3>
+                        <p><%= post.excerpt %></p>
+                        <div class="blog-meta">
+                            <span><i class="far fa-calendar"></i> <%= post.created_at.toLocaleDateString() %></span>
+                            <a href="/blog/<%= post.id %>">Lire plus</a>
+                        </div>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+    </section>
+
+<%- include('partials/footer') %>

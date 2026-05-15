@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz - Évaluation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .quiz-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .quiz-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .quiz-header h1 {
+            color: #0a5c36;
+            margin-bottom: 10px;
+        }
+
+        .question-card {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+        }
+
+        .question-text {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #ddd;
+        }
+
+        .option:hover {
+            background: #e8f5e9;
+            border-color: #27ae60;
+        }
+
+        .option input {
+            margin: 0;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .option label {
+            flex: 1;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        .submit-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        .submit-btn:hover {
+            background: #0a5c36;
+        }
+
+        .result {
+            text-align: center;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .result-success {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .result-fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .back-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #666;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-top: 20px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="quiz-container">
+        <div class="quiz-header">
+            <h1><i class="fas fa-pencil-alt"></i> Évaluation des connaissances</h1>
+            <p>Répondez aux questions ci-dessous (70% requis pour réussir)</p>
+            <% if (typeof attemptsLeft !=='undefined' ) { %>
+                <div style="background: #f0f0f0; padding: 10px; border-radius: 8px; margin-top: 15px;">
+                    <i class="fas fa-info-circle"></i> Tentative <%= currentAttempt %>/<%= attemptsLeft + currentAttempt
+                            %>
+                            (<%= attemptsLeft %> tentative(s) restante(s))
+                </div>
+                <% } %>
+        </div>
+
+        <form id="quizForm">
+            <% for(var i=0; i < questions.length; i++) { var q=questions[i]; %>
+                <div class="question-card">
+                    <div class="question-text">
+                        <%= i+1 %>. <%= q.question %>
+                    </div>
+                    <div class="options">
+                        <div class="option" onclick="selectOption(<%= q.id %>, 'a')">
+                            <input type="radio" name="q_<%= q.id %>" value="a" id="q_<%= q.id %>_a">
+                            <label for="q_<%= q.id %>_a">A. <%= q.option_a %></label>
+                        </div>
+                        <div class="option" onclick="selectOption(<%= q.id %>, 'b')">
+                            <input type="radio" name="q_<%= q.id %>" value="b" id="q_<%= q.id %>_b">
+                            <label for="q_<%= q.id %>_b">B. <%= q.option_b %></label>
+                        </div>
+                        <% if (q.option_c) { %>
+                            <div class="option" onclick="selectOption(<%= q.id %>, 'c')">
+                                <input type="radio" name="q_<%= q.id %>" value="c" id="q_<%= q.id %>_c">
+                                <label for="q_<%= q.id %>_c">C. <%= q.option_c %></label>
+                            </div>
+                            <% } %>
+                                <% if (q.option_d) { %>
+                                    <div class="option" onclick="selectOption(<%= q.id %>, 'd')">
+                                        <input type="radio" name="q_<%= q.id %>" value="d" id="q_<%= q.id %>_d">
+                                        <label for="q_<%= q.id %>_d">D. <%= q.option_d %></label>
+                                    </div>
+                                    <% } %>
+                    </div>
+                </div>
+                <% } %>
+
+                    <button type="submit" class="submit-btn">Soumettre mes réponses</button>
+        </form>
+
+        <div id="result" style="display: none;"></div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="/client/formation/<%= formationId %>/learn" class="back-btn">← Retour à la formation</a>
+        </div>
+    </div>
+
+    <script>
+        const formationId = <%= formationId %>;
+
+        function selectOption(questionId, value) {
+            const radio = document.querySelector(`input[name="q_${questionId}"][value="${value}"]`);
+            if (radio) radio.checked = true;
+        }
+
+        document.getElementById('quizForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Collecter les réponses
+            const answers = {};
+            document.querySelectorAll('[name^="q_"]').forEach(input => {
+                if (input.checked) {
+                    const questionId = input.name.split('_')[1];
+                    answers[questionId] = input.value;
+                }
+            });
+
+            // Vérifier que toutes les questions ont une réponse
+            const totalQuestions = <%= questions.length %>;
+            if (Object.keys(answers).length < totalQuestions) {
+                alert(`Veuillez répondre à toutes les questions (${Object.keys(answers).length}/${totalQuestions})`);
+                return;
+            }
+
+            // Envoyer les réponses
+            const submitBtn = document.querySelector('.submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Vérification en cours...';
+
+            try {
+                const response = await fetch('/client/api/formation/quiz/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ formationId: formationId, answers: answers })
+                });
+
+                const result = await response.json();
+                const resultDiv = document.getElementById('result');
+                resultDiv.style.display = 'block';
+
+                // Dans le script, après avoir reçu la réponse
+                if (result.passed) {
+                    // Succès
+                    resultDiv.className = 'result result-success';
+                    resultDiv.innerHTML = `...`;
+                } else {
+                    // Échec
+                    const attemptsLeft = result.attemptsLeft;
+                    const attemptsUsed = result.attemptsUsed;
+
+                    resultDiv.className = 'result result-fail';
+                    resultDiv.innerHTML = `
+        <i class="fas fa-frown" style="font-size: 48px;"></i>
+        <h2>Désolé...</h2>
+        <p>Vous avez obtenu ${result.score}/${result.totalPoints} points (${Math.round(result.percentage)}%)</p>
+        <p>Le seuil de réussite est de 70%.</p>
+        ${attemptsLeft > 0 ?
+                            `<p>Il vous reste <strong>${attemptsLeft}</strong> tentative(s).</p>
+             <button onclick="location.reload()" class="submit-btn" style="display: inline-block; width: auto; margin-top: 15px;">
+                <i class="fas fa-redo"></i> Réessayer (${attemptsLeft} restante(s))
+             </button>` :
+                            `<p>Vous avez utilisé toutes vos ${result.maxAttempts} tentatives.</p>
+             <a href="/client/formation/${formationId}/learn" class="submit-btn" style="display: inline-block; width: auto; margin-top: 15px; background: #666;">
+                <i class="fas fa-arrow-left"></i> Retour à la formation
+             </a>`
+                        }
+    `;
+                }
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Une erreur est survenue lors de la soumission');
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

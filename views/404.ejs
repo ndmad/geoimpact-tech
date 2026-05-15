@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page non trouvée - GeoImpact Tech</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Raleway:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .error-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 100px 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+        
+        .error-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .error-code {
+            font-size: 120px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            text-shadow: 4px 4px 0 rgba(0,0,0,0.1);
+        }
+        
+        .error-title {
+            font-size: 32px;
+            color: var(--dark);
+            margin-bottom: 20px;
+        }
+        
+        .error-text {
+            color: var(--gray);
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+        
+        .error-actions {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn-outline {
+            background-color: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+        
+        .btn-outline:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-page">
+        <div class="error-content">
+            <div class="error-code">404</div>
+            <h1 class="error-title">Page non trouvée</h1>
+            <p class="error-text">Désolé, la page que vous recherchez n'existe pas ou a été déplacée.</p>
+            <div class="error-actions">
+                <a href="/" class="btn">
+                    <i class="fas fa-home"></i> Accueil
+                </a>
+                <a href="/contact" class="btn btn-outline">
+                    <i class="fas fa-envelope"></i> Nous contacter
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

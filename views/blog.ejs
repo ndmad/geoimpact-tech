@@ -1,0 +1,107 @@
+<% title = 'Blog - GeoImpact Tech' %>
+<% currentPage = 'blog' %>
+<%- include('partials/header') %>
+
+<!-- Page Header -->
+<section class="page-header">
+    <div class="container">
+        <h2>Notre Blog</h2>
+        <ul class="breadcrumb">
+            <li><a href="/">Accueil</a></li>
+            <li>Blog</li>
+        </ul>
+    </div>
+</section>
+
+<!-- Blog Section -->
+<section class="blog-page">
+    <div class="container">
+        <div class="blog-container">
+            <div class="blog-articles">
+                <% blogPosts.forEach(post => { %>
+                <article class="blog-article">
+                    <div class="article-img">
+                        <img src="<%= post.image_url %>" alt="<%= post.title %>">
+                    </div>
+                    <div class="article-content">
+                        <div class="article-meta">
+                            <span><i class="far fa-calendar"></i> <%= post.created_at.toLocaleDateString() %></span>
+                            <span><i class="far fa-user"></i> Par <%= post.author %></span>
+                            <span><i class="far fa-folder"></i> <%= post.category %></span>
+                        </div>
+                        <h3><%= post.title %></h3>
+                        <p><%= post.excerpt %></p>
+                        <a href="/blog/<%= post.id %>" class="read-more">Lire la suite</a>
+                    </div>
+                </article>
+                <% }); %>
+                
+                <% if (totalPages > 1) { %>
+                <div class="pagination">
+                    <% for(let i = 1; i <= totalPages; i++) { %>
+                        <a href="/blog?page=<%= i %>" class="pagination-item <%= currentPage === i ? 'active' : '' %>">
+                            <%= i %>
+                        </a>
+                    <% } %>
+                </div>
+                <% } %>
+            </div>
+            
+            <div class="sidebar">
+                <div class="sidebar-widget">
+                    <h3>Recherche</h3>
+                    <form id="searchForm">
+                        <input type="text" id="searchInput" placeholder="Rechercher..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px;">
+                    </form>
+                </div>
+                
+                <div class="sidebar-widget">
+                    <h3>Catégories</h3>
+                    <ul class="categories-list">
+                        <% categories.forEach(cat => { %>
+                        <li>
+                            <a href="/blog?category=<%= cat.category %>">
+                                <%= cat.category.charAt(0).toUpperCase() + cat.category.slice(1) %>
+                                <span><%= cat.count %></span>
+                            </a>
+                        </li>
+                        <% }); %>
+                    </ul>
+                </div>
+                
+                <div class="sidebar-widget">
+                    <h3>Articles récents</h3>
+                    <ul class="recent-posts">
+                        <% recentPosts.forEach(post => { %>
+                        <li class="recent-post">
+                            <div class="recent-post-img">
+                                <img src="<%= post.image_url %>" alt="<%= post.title %>">
+                            </div>
+                            <div class="recent-post-content">
+                                <h4><a href="/blog/<%= post.id %>"><%= post.title %></a></h4>
+                                <span><i class="far fa-calendar"></i> <%= post.created_at.toLocaleDateString() %></span>
+                            </div>
+                        </li>
+                        <% }); %>
+                    </ul>
+                </div>
+                
+                <div class="sidebar-widget">
+                    <h3>Tags</h3>
+                    <div class="tags-cloud">
+                        <a href="#" class="tag">SIG</a>
+                        <a href="#" class="tag">Environnement</a>
+                        <a href="#" class="tag">Développement</a>
+                        <a href="#" class="tag">Géomatique</a>
+                        <a href="#" class="tag">Études</a>
+                        <a href="#" class="tag">Formation</a>
+                        <a href="#" class="tag">Durable</a>
+                        <a href="#" class="tag">Ressources</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<%- include('partials/footer') %>

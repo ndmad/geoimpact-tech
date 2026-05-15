@@ -1,0 +1,19 @@
+{
+    "welcome": "Bienvenue",
+    "formations": "Formations",
+    "blog": "Blog",
+    "contact": "Contact",
+    "my_account": "Mon compte",
+    "login": "Connexion",
+    "register": "Inscription",
+    "logout": "Déconnexion",
+    "learn_more": "En savoir plus",
+    "buy_now": "Acheter maintenant",
+    "price": "Prix",
+    "duration": "Durée",
+    "level": "Niveau",
+    "category": "Catégorie",
+    "certificate": "Certificat",
+    "my_trainings": "Mes formations",
+    "profile": "Mon profil"
+}
