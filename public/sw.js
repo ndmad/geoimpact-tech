@@ -1,82 +1,141 @@
-// sw.js - Service Worker pour notifications push
-const CACHE_NAME = 'geoimpact-push-v1';
+// sw.js - Service Worker pour PWA
+const CACHE_NAME = 'geoimpact-v1';
+const STATIC_CACHE = 'geoimpact-static-v1';
+const DYNAMIC_CACHE = 'geoimpact-dynamic-v1';
 
+// Fichiers à mettre en cache
+const STATIC_FILES = [
+  '/',
+  '/css/style.css',
+  '/js/main.js',
+  '/js/push-notifications.js',
+  '/manifest.json',
+  '/offline.html'
+];
+
+// Installation du Service Worker
 self.addEventListener('install', (event) => {
-    console.log('Service Worker installé');
-    self.skipWaiting();
+  console.log('Service Worker installation...');
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then((cache) => {
+      return cache.addAll(STATIC_FILES);
+    })
+  );
+  self.skipWaiting();
 });
 
+// Activation - nettoyer les anciens caches
 self.addEventListener('activate', (event) => {
-    console.log('Service Worker activé');
-    event.waitUntil(clients.claim());
+  console.log('Service Worker activation...');
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames.map((cache) => {
+          if (cache !== STATIC_CACHE && cache !== DYNAMIC_CACHE) {
+            return caches.delete(cache);
+          }
+        })
+      );
+    })
+  );
+  return self.clients.claim();
+});
+
+// Interception des requêtes
+self.addEventListener('fetch', (event) => {
+  const url = new URL(event.request.url);
+  
+  // Stratégie: Cache d'abord, puis réseau
+  if (url.origin === location.origin) {
+    // Pour les fichiers statiques
+    if (STATIC_FILES.includes(url.pathname)) {
+      event.respondWith(
+        caches.match(event.request).then((response) => {
+          return response || fetch(event.request);
+        })
+      );
+    } 
+    // Pour les API, ne pas mettre en cache
+    else if (url.pathname.startsWith('/api/')) {
+      event.respondWith(fetch(event.request));
+    }
+    // Pour les autres ressources
+    else {
+      event.respondWith(
+        caches.match(event.request).then((response) => {
+          return response || fetch(event.request).then((fetchResponse) => {
+            return caches.open(DYNAMIC_CACHE).then((cache) => {
+              cache.put(event.request, fetchResponse.clone());
+              return fetchResponse;
+            });
+          });
+        }).catch(() => {
+          return caches.match('/offline.html');
+        })
+      );
+    }
+  } else {
+    // Pour les ressources externes
+    event.respondWith(fetch(event.request));
+  }
 });
 
 // Gestion des notifications push
 self.addEventListener('push', (event) => {
-    console.log('📨 Push reçue:', event);
-    
-    let data = {
-        title: 'GeoImpact Tech',
-        body: 'Nouvelle mise à jour disponible',
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
-        url: '/',
-        timestamp: Date.now()
-    };
-    
-    if (event.data) {
-        try {
-            data = event.data.json();
-        } catch (e) {
-            data.body = event.data.text();
-        }
+  let data = {
+    title: 'GeoImpact Tech',
+    body: 'Nouvelle mise à jour disponible',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-72.png',
+    url: '/'
+  };
+  
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
     }
-    
-    const options = {
-        body: data.body,
-        icon: data.icon || '/favicon.ico',
-        badge: data.badge || '/favicon.ico',
-        vibrate: [200, 100, 200],
-        data: {
-            url: data.url || '/',
-            timestamp: data.timestamp
-        },
-        actions: [
-            {
-                action: 'open',
-                title: 'Voir'
-            },
-            {
-                action: 'close',
-                title: 'Fermer'
-            }
-        ]
-    };
-    
-    event.waitUntil(
-        self.registration.showNotification(data.title, options)
-    );
+  }
+  
+  const options = {
+    body: data.body,
+    icon: data.icon,
+    badge: data.badge,
+    vibrate: [200, 100, 200],
+    data: {
+      url: data.url,
+      timestamp: Date.now()
+    },
+    actions: [
+      { action: 'open', title: 'Ouvrir' },
+      { action: 'close', title: 'Fermer' }
+    ]
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
 });
 
-// Gestion du clic sur notification
+// Clic sur notification
 self.addEventListener('notificationclick', (event) => {
-    event.notification.close();
-    
+  event.notification.close();
+  
+  if (event.action === 'open') {
     const urlToOpen = event.notification.data?.url || '/';
-    
-    if (event.action === 'open') {
-        event.waitUntil(
-            clients.matchAll({ type: 'window', includeUncontrolled: true })
-                .then(windowClients => {
-                    for (let client of windowClients) {
-                        if (client.url === urlToOpen && 'focus' in client) {
-                            return client.focus();
-                        }
-                    }
-                    if (clients.openWindow) {
-                        return clients.openWindow(urlToOpen);
-                    }
-                })
-        );
-    }
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true })
+        .then((windowClients) => {
+          for (let client of windowClients) {
+            if (client.url === urlToOpen && 'focus' in client) {
+              return client.focus();
+            }
+          }
+          if (clients.openWindow) {
+            return clients.openWindow(urlToOpen);
+          }
+        })
+    );
+  }
 });

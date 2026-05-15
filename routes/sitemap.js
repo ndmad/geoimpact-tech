@@ -8,64 +8,63 @@ const pool = new Pool({
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 router.get('/sitemap.xml', async (req, res) => {
     res.header('Content-Type', 'application/xml');
     
     try {
-        // Récupérer toutes les formations
-        const formations = await pool.query('SELECT id, updated_at FROM formations');
-        // Récupérer tous les articles
-        const blogPosts = await pool.query('SELECT id, created_at FROM blog_posts');
-        
-        const baseUrl = 'https://geoimpacttech.com';
+        const baseUrl = process.env.BASE_URL || 'https://geoimpact-tech.onrender.com';
         const today = new Date().toISOString().split('T')[0];
         
-        let xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-    <url>
-        <loc>${baseUrl}/</loc>
-        <lastmod>${today}</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>1.0</priority>
-    </url>
-    <url>
-        <loc>${baseUrl}/formations</loc>
-        <lastmod>${today}</lastmod>
-        <changefreq>daily</changefreq>
-        <priority>0.9</priority>
-    </url>
-    <url>
-        <loc>${baseUrl}/blog</loc>
-        <lastmod>${today}</lastmod>
-        <changefreq>weekly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc>${baseUrl}/contact</loc>
-        <lastmod>${today}</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>`;
+        // Récupérer les données
+        const formations = await pool.query('SELECT id, updated_at FROM formations');
+        const blogPosts = await pool.query('SELECT id, created_at, updated_at FROM blog_posts');
         
-        // Ajouter les formations
+        let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">`;
+
+        // Pages statiques
+        const staticPages = [
+            { url: '/', priority: 1.0, changefreq: 'weekly' },
+            { url: '/formations', priority: 0.9, changefreq: 'daily' },
+            { url: '/blog', priority: 0.8, changefreq: 'weekly' },
+            { url: '/contact', priority: 0.7, changefreq: 'monthly' }
+        ];
+        
+        for (const page of staticPages) {
+            xml += `
+    <url>
+        <loc>${baseUrl}${page.url}</loc>
+        <lastmod>${today}</lastmod>
+        <changefreq>${page.changefreq}</changefreq>
+        <priority>${page.priority}</priority>
+    </url>`;
+        }
+        
+        // Formations dynamiques
         for (const f of formations.rows) {
+            const lastmod = f.updated_at ? f.updated_at.toISOString().split('T')[0] : today;
             xml += `
     <url>
         <loc>${baseUrl}/formations/${f.id}</loc>
-        <lastmod>${f.updated_at ? f.updated_at.toISOString().split('T')[0] : today}</lastmod>
+        <lastmod>${lastmod}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>`;
         }
         
-        // Ajouter les articles
+        // Articles de blog
         for (const p of blogPosts.rows) {
+            const lastmod = p.updated_at ? p.updated_at.toISOString().split('T')[0] : 
+                           (p.created_at ? p.created_at.toISOString().split('T')[0] : today);
             xml += `
     <url>
         <loc>${baseUrl}/blog/${p.id}</loc>
-        <lastmod>${p.created_at ? p.created_at.toISOString().split('T')[0] : today}</lastmod>
+        <lastmod>${lastmod}</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.6</priority>
     </url>`;
@@ -76,9 +75,22 @@ router.get('/sitemap.xml', async (req, res) => {
         
         res.send(xml);
     } catch (error) {
-        console.error('Erreur sitemap:', error);
-        res.status(500).send('Erreur');
+        console.error('Erreur génération sitemap:', error);
+        res.status(500).send('Erreur génération sitemap');
     }
+});
+
+// Robots.txt
+router.get('/robots.txt', (req, res) => {
+    const baseUrl = process.env.BASE_URL || 'https://geoimpact-tech.onrender.com';
+    res.type('text/plain');
+    res.send(`# Robots.txt pour GeoImpact Tech
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /client/api/
+Disallow: /api/
+Sitemap: ${baseUrl}/sitemap.xml`);
 });
 
 module.exports = router;
