@@ -18,13 +18,28 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // Configuration de PostgreSQL
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-});
+// Configuration de PostgreSQL - Compatible avec Render
+let poolConfig;
+
+if (process.env.DATABASE_URL) {
+    // Pour Render (production)
+    poolConfig = {
+        connectionString: process.env.DATABASE_URL,
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    };
+} else {
+    // Pour le développement local
+    poolConfig = {
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || 5432,
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME || 'geoimpact_db',
+    };
+}
+
+const pool = new Pool(poolConfig);
+
 
 // Middlewares
 app.use(express.json());
