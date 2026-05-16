@@ -193,32 +193,17 @@ app.get('/', async (req, res) => {
 app.get('/formations', async (req, res) => {
     try {
         const formationsResult = await req.db.query('SELECT * FROM formations ORDER BY id');
-        const testimonialsResult = await req.db.query('SELECT * FROM testimonials WHERE is_active = true ORDER BY created_at DESC LIMIT 3');
         
-        console.log('Nombre de formations trouvées:', formationsResult.rows.length); // DEBUG
-        
-        let clientConnected = false;
-        let clientId = null;
-        
-        const token = req.cookies?.clientToken;
-        if (token) {
-            try {
-                const jwt = require('jsonwebtoken');
-                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'client_secret_key_2024');
-                clientConnected = true;
-                clientId = decoded.id;
-            } catch (e) {}
+        // Version simplifiée sans template complexe
+        let html = '<h1>Formations</h1><ul>';
+        for (let f of formationsResult.rows) {
+            html += `<li>${f.id} - ${f.title}</li>`;
         }
-        
-        res.render('formations', { 
-            formations: formationsResult.rows,
-            testimonials: testimonialsResult.rows,
-            clientConnected: clientConnected,
-            clientId: clientId
-        });
+        html += '</ul>';
+        res.send(html);
     } catch (error) {
         console.error('Erreur:', error);
-        res.status(500).send('Erreur serveur');
+        res.status(500).send('Erreur: ' + error.message);
     }
 });
 
