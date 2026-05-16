@@ -308,6 +308,16 @@ app.get('/contact', (req, res) => {
     });
 });
 
+// Route pour tester toutes les formations (à ajouter)
+app.get('/api/all-formations', async (req, res) => {
+    try {
+        const result = await req.db.query('SELECT * FROM formations ORDER BY id');
+        res.json(result.rows);
+    } catch (error) {
+        res.json({ error: error.message });
+    }
+});
+
 // Ajoutez cette route après les autres routes API
 // ============ RECHERCHE AVANCÉE ============
 app.get('/api/search', async (req, res) => {
