@@ -193,17 +193,38 @@ app.get('/', async (req, res) => {
 app.get('/formations', async (req, res) => {
     try {
         const formationsResult = await req.db.query('SELECT * FROM formations ORDER BY id');
+        const testimonialsResult = await req.db.query('SELECT * FROM testimonials WHERE is_active = true ORDER BY created_at DESC LIMIT 3');
         
-        // Version simplifiée sans template complexe
-        let html = '<h1>Formations</h1><ul>';
-        for (let f of formationsResult.rows) {
-            html += `<li>${f.id} - ${f.title}</li>`;
+        let clientConnected = false;
+        let clientId = null;
+        
+        const token = req.cookies?.clientToken;
+        if (token) {
+            try {
+                const jwt = require('jsonwebtoken');
+                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'client_secret_key_2024');
+                clientConnected = true;
+                clientId = decoded.id;
+            } catch (e) {}
         }
-        html += '</ul>';
-        res.send(html);
+        
+        res.render('formations', { 
+            // Données SEO
+            title: 'Nos formations - GeoImpact Tech',
+            metaDescription: 'Découvrez nos formations en géomatique, environnement et développement durable. Formation certifiante et professionnelle.',
+            seoTitle: 'Formations professionnelles - GeoImpact Tech',
+            canonicalUrl: 'https://geoimpacttech.com/formations',
+            currentUrl: req.protocol + '://' + req.get('host') + req.originalUrl,
+            
+            // Données de la page
+            formations: formationsResult.rows,
+            testimonials: testimonialsResult.rows,
+            clientConnected: clientConnected,
+            clientId: clientId
+        });
     } catch (error) {
         console.error('Erreur:', error);
-        res.status(500).send('Erreur: ' + error.message);
+        res.status(500).send('Erreur serveur');
     }
 });
 
@@ -285,16 +306,6 @@ app.get('/contact', (req, res) => {
         canonicalUrl: 'https://geoimpacttech.com/contact',
         currentUrl: req.protocol + '://' + req.get('host') + req.originalUrl
     });
-});
-
-// Route pour tester toutes les formations (à ajouter)
-app.get('/api/all-formations', async (req, res) => {
-    try {
-        const result = await req.db.query('SELECT * FROM formations ORDER BY id');
-        res.json(result.rows);
-    } catch (error) {
-        res.json({ error: error.message });
-    }
 });
 
 // Ajoutez cette route après les autres routes API
