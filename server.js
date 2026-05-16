@@ -195,6 +195,8 @@ app.get('/formations', async (req, res) => {
         const formationsResult = await req.db.query('SELECT * FROM formations ORDER BY id');
         const testimonialsResult = await req.db.query('SELECT * FROM testimonials WHERE is_active = true ORDER BY created_at DESC LIMIT 3');
         
+        console.log('Nombre de formations trouvées:', formationsResult.rows.length); // DEBUG
+        
         let clientConnected = false;
         let clientId = null;
         
@@ -209,14 +211,6 @@ app.get('/formations', async (req, res) => {
         }
         
         res.render('formations', { 
-            // Données SEO
-            title: 'Nos formations - GeoImpact Tech',
-            metaDescription: 'Découvrez nos formations en géomatique, environnement et développement durable. Formation certifiante et professionnelle.',
-            seoTitle: 'Formations professionnelles - GeoImpact Tech',
-            canonicalUrl: 'https://geoimpacttech.com/formations',
-            currentUrl: req.protocol + '://' + req.get('host') + req.originalUrl,
-            
-            // Données de la page
             formations: formationsResult.rows,
             testimonials: testimonialsResult.rows,
             clientConnected: clientConnected,
