@@ -136,9 +136,11 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 
 // Routes d'authentification admin
-const authRoutes = require('./routes/auth');
-app.use('/admin', authRoutes);
+//const authRoutes = require('./routes/auth');
+//app.use('/admin', authRoutes);
 
+const adminAuth = require('./routes/admin-simple-auth');
+app.use('/admin', adminAuth.router);
 
 // Routes admin protégées - Version simplifiée sans EJS
 const adminRoutes = require('./routes/admin-simple');
