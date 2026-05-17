@@ -140,8 +140,8 @@ const authRoutes = require('./routes/auth');
 app.use('/admin', authRoutes);
 
 // Routes admin protégées - Version simplifiée sans EJS
-const adminRoutes = require('./routes/admin-simple');
-app.use('/admin', adminRoutes);
+//const adminRoutes = require('./routes/admin-simple');
+//app.use('/admin', adminRoutes);
 
 // Routes client (espace client)
 const clientRoutes = require('./routes/client');

@@ -41,5 +41,19 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
+router.get('/dashboard', requireAuth, (req, res) => {
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Dashboard Admin</title></head>
+        <body>
+            <h1>Dashboard Admin</h1>
+            <p>Bienvenue ${req.session.user.username} !</p>
+            <a href="/admin/logout">Déconnexion</a><br>
+            <a href="/">Voir le site</a>
+        </body>
+        </html>
+    `);
+});
 module.exports = router;
 module.exports.requireAuth = requireAuth;
