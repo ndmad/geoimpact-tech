@@ -59,7 +59,6 @@ app.use((req, res, next) => {
 });
 
 // Ajouter après les middlewares existants
-// Session avec stockage PostgreSQL
 app.use(session({
     store: new pgSession({
         pool: pool,
@@ -72,7 +71,7 @@ app.use(session({
     cookie: { 
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000, // 24 heures
+        maxAge: 24 * 60 * 60 * 1000,
         sameSite: 'lax'
     }
 }));
