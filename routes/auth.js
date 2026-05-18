@@ -1,5 +1,24 @@
 const express = require('express');
 const router = express.Router();
+const { Pool } = require('pg');
+
+const pool = new Pool({
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+// Middleware pour vérifier l'authentification
+const requireAuth = (req, res, next) => {
+    if (!req.session.user) {
+        req.flash('error', 'Veuillez vous connecter');
+        return res.redirect('/admin/login');
+    }
+    next();
+};
 
 // Page de login admin
 router.get('/login', (req, res) => {
@@ -16,59 +35,24 @@ router.get('/login', (req, res) => {
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
     
-    console.log('=== DEBUG LOGIN ===');
-    console.log('Username reçu:', username);
-    console.log('Password reçu:', password);
-    console.log('ADMIN_USERNAME env:', process.env.ADMIN_USERNAME);
-    console.log('ADMIN_PASSWORD env:', process.env.ADMIN_PASSWORD);
+    const adminUser = process.env.ADMIN_USERNAME || 'admin';
+    const adminPass = process.env.ADMIN_PASSWORD || 'GeoImpact2024!';
     
-    // Test avec identifiants en dur pour debug
-    if (username === 'admin' && password === 'GeoImpact2024!') {
-        console.log('✅ Login réussi (hardcoded)');
+    if (username === adminUser && password === adminPass) {
         req.session.user = { username, isAdmin: true };
+        req.flash('success', 'Connexion réussie !');
         res.redirect('/admin/dashboard');
     } else {
-        console.log('❌ Login échoué');
+        req.flash('error', 'Identifiants incorrects');
         res.redirect('/admin/login');
     }
 });
 
-// Logout
-router.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/admin/login');
-});
-
-// Middleware pour vérifier l'authentification
-const requireAuth = (req, res, next) => {
-    if (!req.session.user) {
-        req.flash('error', 'Veuillez vous connecter');
-        return res.redirect('/admin/login');
-    }
-    next();
-};
-
-router.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    
-    console.log(' Tentative login:', username);
-    console.log(' ADMIN_USERNAME env:', process.env.ADMIN_USERNAME);
-    
-    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
-        console.log(' Login réussi !');
-        req.session.user = { username, isAdmin: true };
-        req.session.save((err) => {
-            if (err) console.error(' Session save error:', err);
-            res.redirect('/admin/dashboard');
-        });
-    } else {
-        console.log(' Login échoué - identifiants incorrects');
-        res.redirect('/admin/login');
-    }
-});
-
+// Dashboard admin avec template EJS
 router.get('/dashboard', requireAuth, async (req, res) => {
     try {
+        console.log('🔵 Chargement du dashboard admin...');
+        
         // Récupérer les statistiques
         const formations = await pool.query('SELECT COUNT(*) FROM formations');
         const blog = await pool.query('SELECT COUNT(*) FROM blog_posts');
@@ -76,20 +60,28 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         const subscribers = await pool.query("SELECT COUNT(*) FROM newsletter_subscribers WHERE is_active = true");
         
         const stats = {
-            formations: formations.rows[0].count,
-            blog: blog.rows[0].count,
-            messages: messages.rows[0].count,
-            subscribers: subscribers.rows[0].count
+            formations: parseInt(formations.rows[0].count) || 0,
+            blog: parseInt(blog.rows[0].count) || 0,
+            messages: parseInt(messages.rows[0].count) || 0,
+            subscribers: parseInt(subscribers.rows[0].count) || 0
         };
+        
+        console.log('📊 Stats:', stats);
         
         res.render('admin/dashboard', { 
             stats: stats,
             title: 'Dashboard - Administration'
         });
     } catch (error) {
-        console.error('Erreur dashboard:', error);
-        res.status(500).send('Erreur serveur');
+        console.error('❌ Erreur dashboard:', error);
+        res.status(500).send('Erreur serveur: ' + error.message);
     }
+});
+
+// Logout
+router.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/admin/login');
 });
 
 module.exports = router;
