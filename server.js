@@ -5,6 +5,7 @@ const { Pool } = require('pg');
 // Ajouter en haut avec les autres imports
 const session = require('express-session');
 const flash = require('connect-flash');
+const pgSession = require('connect-pg-simple')(session);
 
 // Routes client
 const cookieParser = require('cookie-parser');
@@ -58,12 +59,25 @@ app.use((req, res, next) => {
 });
 
 // Ajouter après les middlewares existants
+// Session avec stockage PostgreSQL
 app.use(session({
+    store: new pgSession({
+        pool: pool,
+        tableName: 'session',
+        createTableIfMissing: true
+    }),
     secret: process.env.SESSION_SECRET || 'secret_key',
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false, maxAge: 3600000 } // 1 heure
+    saveUninitialized: false,
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production',
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000, // 24 heures
+        sameSite: 'lax'
+    }
 }));
+
+
 app.use(flash());
 app.use((req, res, next) => {
     res.locals.success_msg = req.flash('success');

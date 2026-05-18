@@ -41,6 +41,25 @@ const requireAuth = (req, res, next) => {
     next();
 };
 
+router.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    
+    console.log(' Tentative login:', username);
+    console.log(' ADMIN_USERNAME env:', process.env.ADMIN_USERNAME);
+    
+    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+        console.log(' Login réussi !');
+        req.session.user = { username, isAdmin: true };
+        req.session.save((err) => {
+            if (err) console.error(' Session save error:', err);
+            res.redirect('/admin/dashboard');
+        });
+    } else {
+        console.log(' Login échoué - identifiants incorrects');
+        res.redirect('/admin/login');
+    }
+});
+
 router.get('/dashboard', requireAuth, (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -55,5 +74,6 @@ router.get('/dashboard', requireAuth, (req, res) => {
         </html>
     `);
 });
+
 module.exports = router;
 module.exports.requireAuth = requireAuth;
