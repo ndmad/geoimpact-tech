@@ -67,19 +67,29 @@ router.post('/login', (req, res) => {
     }
 });
 
-router.get('/dashboard', requireAuth, (req, res) => {
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head><title>Dashboard Admin</title></head>
-        <body>
-            <h1>Dashboard Admin</h1>
-            <p>Bienvenue ${req.session.user.username} !</p>
-            <a href="/admin/logout">Déconnexion</a><br>
-            <a href="/">Voir le site</a>
-        </body>
-        </html>
-    `);
+router.get('/dashboard', requireAuth, async (req, res) => {
+    try {
+        // Récupérer les statistiques
+        const formations = await pool.query('SELECT COUNT(*) FROM formations');
+        const blog = await pool.query('SELECT COUNT(*) FROM blog_posts');
+        const messages = await pool.query("SELECT COUNT(*) FROM contact_messages WHERE status = 'pending'");
+        const subscribers = await pool.query("SELECT COUNT(*) FROM newsletter_subscribers WHERE is_active = true");
+        
+        const stats = {
+            formations: formations.rows[0].count,
+            blog: blog.rows[0].count,
+            messages: messages.rows[0].count,
+            subscribers: subscribers.rows[0].count
+        };
+        
+        res.render('admin/dashboard', { 
+            stats: stats,
+            title: 'Dashboard - Administration'
+        });
+    } catch (error) {
+        console.error('Erreur dashboard:', error);
+        res.status(500).send('Erreur serveur');
+    }
 });
 
 module.exports = router;
