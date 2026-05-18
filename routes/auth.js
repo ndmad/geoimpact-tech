@@ -16,12 +16,19 @@ router.get('/login', (req, res) => {
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
     
-    if (username === process.env.ADMIN_USERNAME && password === process.env.ADMIN_PASSWORD) {
+    console.log('=== DEBUG LOGIN ===');
+    console.log('Username reçu:', username);
+    console.log('Password reçu:', password);
+    console.log('ADMIN_USERNAME env:', process.env.ADMIN_USERNAME);
+    console.log('ADMIN_PASSWORD env:', process.env.ADMIN_PASSWORD);
+    
+    // Test avec identifiants en dur pour debug
+    if (username === 'admin' && password === 'GeoImpact2024!') {
+        console.log('✅ Login réussi (hardcoded)');
         req.session.user = { username, isAdmin: true };
-        req.flash('success', 'Connexion réussie !');
         res.redirect('/admin/dashboard');
     } else {
-        req.flash('error', 'Identifiants incorrects');
+        console.log('❌ Login échoué');
         res.redirect('/admin/login');
     }
 });
