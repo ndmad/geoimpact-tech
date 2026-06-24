@@ -966,13 +966,20 @@ router.post('/api/login', [
 });
 
 // Demande de réinitialisation de mot de passe
+// Demande de réinitialisation de mot de passe
 router.post('/api/forgot-password', async (req, res) => {
     const { email } = req.body;
+    const { sendResetPasswordEmail } = require('../utils/emailService');
+    const crypto = require('crypto');
     
     try {
-        const client = await pool.query('SELECT id, nom, prenom, email_verified FROM clients WHERE email = $1', [email]);
+        console.log('📧 Demande de réinitialisation pour:', email);
         
-        if (client.rows.length > 0 && client.rows[0].email_verified) {
+        const client = await pool.query('SELECT id, nom, prenom, email_verified FROM clients WHERE email = $1', [email]);
+        console.log('📊 Client trouvé:', client.rows.length > 0);
+        
+        // Ne pas vérifier email_verified pour le reset password
+        if (client.rows.length > 0) {
             const resetToken = crypto.randomBytes(32).toString('hex');
             
             await pool.query(
@@ -982,16 +989,23 @@ router.post('/api/forgot-password', async (req, res) => {
                 [resetToken, client.rows[0].id]
             );
             
-            await sendResetPasswordEmail(email, `${client.rows[0].prenom} ${client.rows[0].nom}`, resetToken);
+            try {
+                await sendResetPasswordEmail(email, `${client.rows[0].prenom} ${client.rows[0].nom}`, resetToken);
+                console.log('✅ Email envoyé à:', email);
+            } catch (emailError) {
+                console.error('❌ Erreur envoi email:', emailError);
+            }
+        } else {
+            console.log('❌ Client non trouvé');
         }
         
-        // Toujours répondre la même chose pour éviter de révéler l'existence d'un compte
+        // Toujours répondre la même chose pour ne pas révéler l'existence d'un compte
         res.json({ 
             success: true, 
-            message: 'Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.' 
+            message: '✅ Si un compte existe avec cet email, vous recevrez un lien de réinitialisation.' 
         });
     } catch (error) {
-        console.error('Erreur:', error);
+        console.error('❌ Erreur:', error);
         res.status(500).json({ error: 'Erreur lors de la demande' });
     }
 });
