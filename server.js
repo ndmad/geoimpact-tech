@@ -405,19 +405,34 @@ app.get('/api/search', async (req, res) => {
 });
 
 // Route pour voir les détails d'une formation
+// Route pour voir les détails d'une formation
 app.get('/formations/:id', async (req, res) => {
     try {
         const formationId = req.params.id;
+        console.log('🔵 Détail formation ID:', formationId);
+        
         const result = await req.db.query('SELECT * FROM formations WHERE id = $1', [formationId]);
+        console.log('📊 Formation trouvée:', result.rows.length > 0);
 
         if (result.rows.length === 0) {
             return res.status(404).send('Formation non trouvée');
         }
 
-        res.render('formation-detail', { formation: result.rows[0] });
+        const formation = result.rows[0];
+        
+        res.render('formation-detail', { 
+            formation: formation,
+            // Données SEO
+            title: formation.title + ' - GeoImpact Tech',
+            seoTitle: formation.title + ' - Formation GeoImpact Tech',
+            metaDescription: formation.description.substring(0, 160),
+            canonicalUrl: 'https://geoimpacttech.com/formations/' + formationId,
+            currentUrl: req.protocol + '://' + req.get('host') + req.originalUrl
+        });
     } catch (error) {
-        console.error('Erreur:', error);
-        res.status(500).send('Erreur serveur');
+        console.error('❌ Erreur détaillée:', error);
+        console.error('❌ Stack:', error.stack);
+        res.status(500).send('Erreur serveur: ' + error.message);
     }
 });
 
