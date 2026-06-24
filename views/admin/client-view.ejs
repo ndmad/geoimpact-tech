@@ -2,7 +2,11 @@
 
 <div class="page-header">
     <h2>Détail du client</h2>
-    <a href="/admin/enrollments" class="btn">← Retour</a>
+    <div>
+        <a href="/admin/enrollments" class="btn">← Retour</a>
+        <a href="/admin/clients/edit/<%= client.id %>" class="btn" style="background: #3498db;">✏️ Modifier</a>
+        <a href="/admin/clients/delete/<%= client.id %>" class="btn" style="background: #e74c3c;" onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce client et toutes ses données ?')">🗑️ Supprimer</a>
+    </div>
 </div>
 
 <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">

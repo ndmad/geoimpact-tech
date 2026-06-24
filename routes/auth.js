@@ -468,5 +468,82 @@ router.get('/clients/view/:id', requireAuth, async (req, res) => {
         res.status(500).send('Erreur serveur: ' + error.message);
     }
 });
+
+// Formulaire de modification d'un client
+router.get('/clients/edit/:id', requireAuth, async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT id, email, nom, prenom, telephone, entreprise, fonction FROM clients WHERE id = $1',
+            [req.params.id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).send('Client non trouvé');
+        }
+        
+        res.render('admin/client-edit', { 
+            client: result.rows[0],
+            title: 'Modifier le client'
+        });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).send('Erreur serveur: ' + error.message);
+    }
+});
+
+// Traitement de la modification d'un client
+router.post('/clients/edit/:id', requireAuth, async (req, res) => {
+    const { nom, prenom, telephone, entreprise, fonction } = req.body;
+    const clientId = req.params.id;
+    
+    try {
+        await pool.query(
+            `UPDATE clients 
+             SET nom = $1, prenom = $2, telephone = $3, entreprise = $4, fonction = $5, updated_at = NOW()
+             WHERE id = $6`,
+            [nom, prenom, telephone || null, entreprise || null, fonction || null, clientId]
+        );
+        
+        req.flash('success', 'Client modifié avec succès');
+        res.redirect('/admin/clients/view/' + clientId);
+    } catch (error) {
+        console.error('Erreur:', error);
+        req.flash('error', 'Erreur lors de la modification');
+        res.redirect('/admin/clients/edit/' + clientId);
+    }
+});
+
+// Supprimer un client et toutes ses données associées
+router.get('/clients/delete/:id', requireAuth, async (req, res) => {
+    const clientId = req.params.id;
+    
+    try {
+        // Vérifier si le client existe
+        const client = await pool.query('SELECT id, email FROM clients WHERE id = $1', [clientId]);
+        if (client.rows.length === 0) {
+            req.flash('error', 'Client non trouvé');
+            return res.redirect('/admin/enrollments');
+        }
+        
+        // Supprimer les données associées (les clés étrangères avec ON DELETE CASCADE le feront automatiquement)
+        // Mais on peut aussi les supprimer explicitement
+        await pool.query('DELETE FROM client_video_progress WHERE client_id = $1', [clientId]);
+        await pool.query('DELETE FROM client_quiz_answers WHERE client_id = $1', [clientId]);
+        await pool.query('DELETE FROM client_messages WHERE client_id = $1', [clientId]);
+        await pool.query('DELETE FROM client_formations WHERE client_id = $1', [clientId]);
+        await pool.query('DELETE FROM certificates WHERE client_id = $1', [clientId]);
+        await pool.query('DELETE FROM orders WHERE client_id = $1', [clientId]);
+        await pool.query('DELETE FROM clients WHERE id = $1', [clientId]);
+        
+        req.flash('success', `Client ${client.rows[0].email} supprimé avec succès`);
+        res.redirect('/admin/enrollments');
+    } catch (error) {
+        console.error('Erreur suppression:', error);
+        req.flash('error', 'Erreur lors de la suppression du client: ' + error.message);
+        res.redirect('/admin/enrollments');
+    }
+});
+
+
 module.exports = router;
 module.exports.requireAuth = requireAuth;
