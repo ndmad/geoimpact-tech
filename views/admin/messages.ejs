@@ -1,0 +1,46 @@
+<%- include('../partials/admin-header') %>
+
+<div class="page-header">
+    <h2>Messages de contact</h2>
+</div>
+
+<% if (success_msg) { %>
+    <div class="alert alert-success"><%= success_msg %></div>
+<% } %>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Sujet</th>
+            <th>Statut</th>
+            <th>Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% if (messages && messages.length > 0) { %>
+            <% for(var i = 0; i < messages.length; i++) { 
+                var m = messages[i];
+            %>
+            <tr>
+                <td><%= m.id %></td>
+                <td><%= m.name %></td>
+                <td><%= m.email %></td>
+                <td><%= m.subject || 'Général' %></td>
+                <td><%= m.status === 'pending' ? '📩 En attente' : '📖 Lu' %></td>
+                <td><%= new Date(m.created_at).toLocaleDateString() %></td>
+                <td>
+                    <a href="/admin/messages/view/<%= m.id %>" class="btn-edit">Voir</a>
+                </td>
+            </tr>
+            <% } %>
+        <% } else { %>
+            <tr><td colspan="7" style="text-align:center;">Aucun message</td></tr>
+        <% } %>
+    </tbody>
+</table>
+
+<%- include('../partials/admin-footer') %>

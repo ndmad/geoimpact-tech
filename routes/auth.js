@@ -13,14 +13,20 @@ const pool = new Pool({
 
 // Middleware pour vérifier l'authentification
 const requireAuth = (req, res, next) => {
-    if (!req.session.user) {
+    console.log('🔐 requireAuth - Session ID:', req.sessionID);
+    console.log('🔐 requireAuth - User:', req.session?.user);
+    
+    if (!req.session || !req.session.user) {
+        console.log('❌ Pas de session valide, redirection vers login');
         req.flash('error', 'Veuillez vous connecter');
         return res.redirect('/admin/login');
     }
+    console.log('✅ Session valide, accès autorisé');
     next();
 };
 
-// Page de login admin
+// ============ LOGIN & LOGOUT ============
+
 router.get('/login', (req, res) => {
     if (req.session.user) {
         return res.redirect('/admin/dashboard');
@@ -31,7 +37,6 @@ router.get('/login', (req, res) => {
     });
 });
 
-// Traitement du login
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
     
@@ -48,12 +53,15 @@ router.post('/login', (req, res) => {
     }
 });
 
-// Dashboard admin avec template EJS
+router.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/admin/login');
+});
+
+// ============ DASHBOARD ============
+
 router.get('/dashboard', requireAuth, async (req, res) => {
     try {
-        console.log('🔵 Chargement du dashboard admin...');
-        
-        // Récupérer les statistiques
         const formations = await pool.query('SELECT COUNT(*) FROM formations');
         const blog = await pool.query('SELECT COUNT(*) FROM blog_posts');
         const messages = await pool.query("SELECT COUNT(*) FROM contact_messages WHERE status = 'pending'");
@@ -66,22 +74,220 @@ router.get('/dashboard', requireAuth, async (req, res) => {
             subscribers: parseInt(subscribers.rows[0].count) || 0
         };
         
-        console.log('📊 Stats:', stats);
-        
         res.render('admin/dashboard', { 
             stats: stats,
             title: 'Dashboard - Administration'
         });
     } catch (error) {
-        console.error('❌ Erreur dashboard:', error);
+        console.error('Erreur dashboard:', error);
         res.status(500).send('Erreur serveur: ' + error.message);
     }
 });
 
-// Logout
-router.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/admin/login');
+// ============ GESTION DES FORMATIONS ============
+
+router.get('/formations', requireAuth, async (req, res) => {
+    try {
+        console.log('🔵 Route /formations appelée - Session OK');
+        console.log('🔵 User:', req.session.user);
+        
+        const result = await pool.query('SELECT * FROM formations ORDER BY id');
+        console.log('📊 Formations trouvées:', result.rows.length);
+        
+        res.render('admin/formations', { 
+            formations: result.rows,
+            title: 'Gestion des formations',
+            success_msg: req.flash('success'),
+            error_msg: req.flash('error')
+        });
+    } catch (error) {
+        console.error('❌ Erreur détaillée:', error);
+        console.error('❌ Stack:', error.stack);
+        res.status(500).send('Erreur serveur: ' + error.message);
+    }
+});
+
+
+
+router.get('/formations/new', requireAuth, (req, res) => {
+    res.render('admin/formation-form', { formation: null, title: 'Ajouter une formation' });
+});
+
+router.post('/formations/add', requireAuth, async (req, res) => {
+    try {
+        const { title, description, duration, level, category, availability, image_url, price } = req.body;
+        await pool.query(
+            'INSERT INTO formations (title, description, duration, level, category, availability, image_url, price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+            [title, description, duration, level, category, availability, image_url, price || null]
+        );
+        req.flash('success', 'Formation ajoutée avec succès');
+        res.redirect('/admin/formations');
+    } catch (error) {
+        console.error('Erreur:', error);
+        req.flash('error', 'Erreur lors de l\'ajout');
+        res.redirect('/admin/formations/new');
+    }
+});
+
+router.get('/formations/edit/:id', requireAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM formations WHERE id = $1', [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).send('Formation non trouvée');
+        res.render('admin/formation-form', { formation: result.rows[0], title: 'Modifier la formation' });
+    } catch (error) {
+        res.status(500).send('Erreur: ' + error.message);
+    }
+});
+
+router.post('/formations/edit/:id', requireAuth, async (req, res) => {
+    try {
+        const { title, description, duration, level, category, availability, image_url, price } = req.body;
+        await pool.query(
+            'UPDATE formations SET title=$1, description=$2, duration=$3, level=$4, category=$5, availability=$6, image_url=$7, price=$8 WHERE id=$9',
+            [title, description, duration, level, category, availability, image_url, price || null, req.params.id]
+        );
+        req.flash('success', 'Formation modifiée avec succès');
+        res.redirect('/admin/formations');
+    } catch (error) {
+        console.error('Erreur:', error);
+        req.flash('error', 'Erreur lors de la modification');
+        res.redirect('/admin/formations/edit/' + req.params.id);
+    }
+});
+
+router.get('/formations/delete/:id', requireAuth, async (req, res) => {
+    try {
+        const id = req.params.id;
+        console.log('🔵 Suppression formation ID:', id);
+        
+        const result = await pool.query('DELETE FROM formations WHERE id = $1 RETURNING id', [id]);
+        console.log('📊 Supprimé:', result.rows.length > 0);
+        
+        req.flash('success', 'Formation supprimée avec succès');
+        res.redirect('/admin/formations');
+    } catch (error) {
+        console.error('❌ Erreur suppression:', error);
+        req.flash('error', 'Erreur lors de la suppression: ' + error.message);
+        res.redirect('/admin/formations');
+    }
+});
+
+// ============ GESTION DU BLOG ============
+
+router.get('/blog', requireAuth, async (req, res) => {
+    try {
+        console.log('🔵 Route /blog appelée');
+        const result = await pool.query('SELECT * FROM blog_posts ORDER BY created_at DESC');
+        console.log('📊 Articles trouvés:', result.rows.length);
+        
+        res.render('admin/blog', { 
+            posts: result.rows,
+            title: 'Gestion du blog',  // ← AJOUTER CETTE LIGNE
+            success_msg: req.flash('success'),
+            error_msg: req.flash('error')
+        });
+    } catch (error) {
+        console.error('❌ Erreur:', error);
+        res.status(500).send('Erreur serveur: ' + error.message);
+    }
+});
+
+router.get('/blog/new', requireAuth, (req, res) => {
+    res.render('admin/blog-form', { 
+        post: null, 
+        title: 'Ajouter un article',
+        error_msg: req.flash('error')
+    });
+});
+
+router.post('/blog/add', requireAuth, async (req, res) => {
+    try {
+        const { title, content, excerpt, author, category, image_url } = req.body;
+        await pool.query(
+            'INSERT INTO blog_posts (title, content, excerpt, author, category, image_url, created_at) VALUES ($1, $2, $3, $4, $5, $6, NOW())',
+            [title, content, excerpt, author, category, image_url]
+        );
+        req.flash('success', 'Article ajouté avec succès');
+        res.redirect('/admin/blog');
+    } catch (error) {
+        console.error('Erreur:', error);
+        req.flash('error', 'Erreur lors de l\'ajout');
+        res.redirect('/admin/blog/new');
+    }
+});
+
+router.get('/blog/edit/:id', requireAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM blog_posts WHERE id = $1', [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).send('Article non trouvé');
+        res.render('admin/blog-form', { post: result.rows[0], title: 'Modifier l\'article' });
+    } catch (error) {
+        res.status(500).send('Erreur: ' + error.message);
+    }
+});
+
+router.post('/blog/edit/:id', requireAuth, async (req, res) => {
+    try {
+        const { title, content, excerpt, author, category, image_url } = req.body;
+        await pool.query(
+            'UPDATE blog_posts SET title=$1, content=$2, excerpt=$3, author=$4, category=$5, image_url=$6, updated_at=NOW() WHERE id=$7',
+            [title, content, excerpt, author, category, image_url, req.params.id]
+        );
+        req.flash('success', 'Article modifié avec succès');
+        res.redirect('/admin/blog');
+    } catch (error) {
+        console.error('Erreur:', error);
+        req.flash('error', 'Erreur lors de la modification');
+        res.redirect('/admin/blog/edit/' + req.params.id);
+    }
+});
+
+router.get('/blog/delete/:id', requireAuth, async (req, res) => {
+    try {
+        await pool.query('DELETE FROM blog_posts WHERE id = $1', [req.params.id]);
+        req.flash('success', 'Article supprimé avec succès');
+        res.redirect('/admin/blog');
+    } catch (error) {
+        console.error('Erreur:', error);
+        req.flash('error', 'Erreur lors de la suppression');
+        res.redirect('/admin/blog');
+    }
+});
+
+// ============ GESTION DES MESSAGES ============
+
+
+router.get('/messages', requireAuth, async (req, res) => {
+    try {
+        console.log('🔵 Route /messages appelée');
+        const result = await pool.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
+        console.log('📊 Messages trouvés:', result.rows.length);
+        
+        res.render('admin/messages', { 
+            messages: result.rows,
+            title: 'Gestion des messages',  // ← AJOUTER CETTE LIGNE
+            success_msg: req.flash('success'),
+            error_msg: req.flash('error')
+        });
+    } catch (error) {
+        console.error('❌ Erreur:', error);
+        res.status(500).send('Erreur serveur: ' + error.message);
+    }
+});
+
+router.get('/messages/view/:id', requireAuth, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM contact_messages WHERE id = $1', [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).send('Message non trouvé');
+        
+        // Marquer comme lu
+        await pool.query(`UPDATE contact_messages SET status = 'read' WHERE id = $1`, [req.params.id]);
+        
+        res.render('admin/message-view', { message: result.rows[0] });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).send('Erreur serveur: ' + error.message);
+    }
 });
 
 module.exports = router;

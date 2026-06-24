@@ -1,21 +1,18 @@
-<% include ../partials/admin-header %>
+<%- include('../partials/admin-header') %>
 
 <div class="page-header">
     <h2>Gestion des formations</h2>
-    <a href="/admin/formations/add" class="btn btn-primary">
-        <i class="fas fa-plus"></i> Ajouter une formation
-    </a>
+    <a href="/admin/formations/new" class="btn">+ Ajouter une formation</a>
 </div>
 
-<% if (success_msg) { %>
+<% if (typeof success_msg !== 'undefined' && success_msg) { %>
     <div class="alert alert-success"><%= success_msg %></div>
 <% } %>
-
-<% if (error_msg) { %>
+<% if (typeof error_msg !== 'undefined' && error_msg) { %>
     <div class="alert alert-error"><%= error_msg %></div>
 <% } %>
 
-<table class="admin-table">
+<table>
     <thead>
         <tr>
             <th>ID</th>
@@ -23,31 +20,30 @@
             <th>Durée</th>
             <th>Niveau</th>
             <th>Catégorie</th>
+            <th>Prix</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        <% formations.forEach(formation => { %>
-        <tr>
-            <td><%= formation.id %></td>
-            <td><%= formation.title %></td>
-            <td><%= formation.duration %></td>
-            <td><%= formation.level %></td>
-            <td><%= formation.category %></td>
-            <td class="actions">
-                <button onclick="editFormation(<%= formation.id %>)" class="btn-edit">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <a href="/admin/formations/delete/<%= formation.id %>" 
-                   onclick="return confirm('Supprimer cette formation ?')" 
-                   class="btn-delete">
-                    <i class="fas fa-trash"></i>
-                </a>
-            </td>
-        </tr>
-        <% }); %>
+        <% if (formations && formations.length > 0) { %>
+            <% formations.forEach(function(f) { %>
+            <tr>
+                <td><%= f.id %></td>
+                <td><%= f.title %></td>
+                <td><%= f.duration %></td>
+                <td><%= f.level %></td>
+                <td><%= f.category %></td>
+                <td><%= f.price ? f.price + ' €' : 'Gratuit' %></td>
+                <td style="white-space: nowrap;">
+                    <a href="/admin/formations/edit/<%= f.id %>" class="btn-edit">Modifier</a>
+                    <a href="/admin/formations/delete/<%= f.id %>" class="btn-delete" onclick="return confirm('Supprimer cette formation ?')">Supprimer</a>
+                </td>
+            </tr>
+            <% }); %>
+        <% } else { %>
+            <tr><td colspan="7" style="text-align:center;">Aucune formation</td></tr>
+        <% } %>
     </tbody>
 </table>
 
-<!-- Modal d'édition (à implémenter) -->
-<% include ../partials/admin-footer %>
+<%- include('../partials/admin-footer') %>

@@ -1,0 +1,56 @@
+<%- include('../partials/admin-header') %>
+
+<div class="page-header">
+    <h2><%= title || 'Ajouter une formation' %></h2>
+    <a href="/admin/formations" class="btn">← Retour</a>
+</div>
+
+<% if (error_msg) { %>
+    <div class="alert alert-error"><%= error_msg %></div>
+<% } %>
+
+<form action="/admin/formations/<%= formation ? 'edit/' + formation.id : 'add' %>" method="POST">
+    <div class="form-group">
+        <label>Titre *</label>
+        <input type="text" name="title" value="<%= formation ? formation.title : '' %>" required>
+    </div>
+    <div class="form-group">
+        <label>Description *</label>
+        <textarea name="description" required><%= formation ? formation.description : '' %></textarea>
+    </div>
+    <div class="form-group">
+        <label>Durée *</label>
+        <input type="text" name="duration" value="<%= formation ? formation.duration : '' %>" required>
+    </div>
+    <div class="form-group">
+        <label>Niveau *</label>
+        <select name="level">
+            <option value="Débutant" <%= formation && formation.level === 'Débutant' ? 'selected' : '' %>>Débutant</option>
+            <option value="Intermédiaire" <%= formation && formation.level === 'Intermédiaire' ? 'selected' : '' %>>Intermédiaire</option>
+            <option value="Avancé" <%= formation && formation.level === 'Avancé' ? 'selected' : '' %>>Avancé</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Catégorie *</label>
+        <select name="category">
+            <option value="geomatique" <%= formation && formation.category === 'geomatique' ? 'selected' : '' %>>Géomatique</option>
+            <option value="environnement" <%= formation && formation.category === 'environnement' ? 'selected' : '' %>>Environnement</option>
+            <option value="developpement" <%= formation && formation.category === 'developpement' ? 'selected' : '' %>>Développement</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Disponibilité</label>
+        <input type="text" name="availability" value="<%= formation ? formation.availability : 'En ligne' %>">
+    </div>
+    <div class="form-group">
+        <label>Image URL</label>
+        <input type="url" name="image_url" value="<%= formation ? formation.image_url : '' %>">
+    </div>
+    <div class="form-group">
+        <label>Prix (€)</label>
+        <input type="number" step="0.01" name="price" value="<%= formation ? formation.price : '' %>">
+    </div>
+    <button type="submit" class="btn">Enregistrer</button>
+</form>
+
+<%- include('../partials/admin-footer') %>

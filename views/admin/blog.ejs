@@ -1,0 +1,49 @@
+<%- include('../partials/admin-header') %>
+
+<div class="page-header">
+    <h2>Gestion du blog</h2>
+    <a href="/admin/blog/new" class="btn">+ Nouvel article</a>
+</div>
+
+<% if (typeof success_msg !== 'undefined' && success_msg) { %>
+    <div class="alert alert-success"><%= success_msg %></div>
+<% } %>
+<% if (typeof error_msg !== 'undefined' && error_msg) { %>
+    <div class="alert alert-error"><%= error_msg %></div>
+<% } %>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Titre</th>
+            <th>Auteur</th>
+            <th>Catégorie</th>
+            <th>Date</th>
+            <th>Vues</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% if (posts && posts.length > 0) { %>
+            <% posts.forEach(function(p) { %>
+            <tr>
+                <td><%= p.id %></td>
+                <td><%= p.title %></td>
+                <td><%= p.author %></td>
+                <td><%= p.category %></td>
+                <td><%= new Date(p.created_at).toLocaleDateString() %></td>
+                <td><%= p.views || 0 %></td>
+                <td style="white-space: nowrap;">
+                    <a href="/admin/blog/edit/<%= p.id %>" class="btn-edit">Modifier</a>
+                    <a href="/admin/blog/delete/<%= p.id %>" class="btn-delete" onclick="return confirm('Supprimer cet article ?')">Supprimer</a>
+                </td>
+            </tr>
+            <% }); %>
+        <% } else { %>
+            <tr><td colspan="7" style="text-align:center;">Aucun article</td></tr>
+        <% } %>
+    </tbody>
+</table>
+
+<%- include('../partials/admin-footer') %>

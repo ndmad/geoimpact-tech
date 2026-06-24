@@ -1,0 +1,44 @@
+<%- include('../partials/admin-header') %>
+
+<div class="page-header">
+    <h2><%= title || 'Ajouter un article' %></h2>
+    <a href="/admin/blog" class="btn">← Retour</a>
+</div>
+
+<% if (error_msg) { %>
+    <div class="alert alert-error"><%= error_msg %></div>
+<% } %>
+
+<form action="/admin/blog/<%= post ? 'edit/' + post.id : 'add' %>" method="POST">
+    <div class="form-group">
+        <label>Titre *</label>
+        <input type="text" name="title" value="<%= post ? post.title : '' %>" required>
+    </div>
+    <div class="form-group">
+        <label>Extrait *</label>
+        <textarea name="excerpt" required><%= post ? post.excerpt : '' %></textarea>
+    </div>
+    <div class="form-group">
+        <label>Contenu *</label>
+        <textarea name="content" rows="10" required><%= post ? post.content : '' %></textarea>
+    </div>
+    <div class="form-group">
+        <label>Auteur *</label>
+        <input type="text" name="author" value="<%= post ? post.author : '' %>" required>
+    </div>
+    <div class="form-group">
+        <label>Catégorie</label>
+        <select name="category">
+            <option value="geomatique" <%= post && post.category === 'geomatique' ? 'selected' : '' %>>Géomatique</option>
+            <option value="environnement" <%= post && post.category === 'environnement' ? 'selected' : '' %>>Environnement</option>
+            <option value="developpement" <%= post && post.category === 'developpement' ? 'selected' : '' %>>Développement</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Image URL</label>
+        <input type="url" name="image_url" value="<%= post ? post.image_url : '' %>">
+    </div>
+    <button type="submit" class="btn">Publier</button>
+</form>
+
+<%- include('../partials/admin-footer') %>

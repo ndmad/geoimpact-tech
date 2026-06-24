@@ -1,0 +1,21 @@
+<%- include('../partials/admin-header') %>
+
+<div class="page-header">
+    <h2>Message de <%= message.name %></h2>
+    <a href="/admin/messages" class="btn">← Retour</a>
+</div>
+
+<div style="background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <p><strong>Email:</strong> <%= message.email %></p>
+    <p><strong>Téléphone:</strong> <%= message.phone || 'Non renseigné' %></p>
+    <p><strong>Sujet:</strong> <%= message.subject || 'Général' %></p>
+    <p><strong>Date:</strong> <%= new Date(message.created_at).toLocaleString() %></p>
+    <p><strong>Statut:</strong> <%= message.status === 'pending' ? '📩 En attente' : '📖 Lu' %></p>
+    <hr>
+    <h3>Message:</h3>
+    <p style="background: #f9f9f9; padding: 15px; border-radius: 5px; border-left: 4px solid #27ae60;">
+        <%= message.message %>
+    </p>
+</div>
+
+<%- include('../partials/admin-footer') %>
