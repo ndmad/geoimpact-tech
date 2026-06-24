@@ -1,0 +1,77 @@
+<%- include('../partials/admin-header') %>
+
+<div class="page-header">
+    <h2>Détail du client</h2>
+    <a href="/admin/enrollments" class="btn">← Retour</a>
+</div>
+
+<div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <h3>Informations client</h3>
+    <p><strong>Nom:</strong> <%= client.prenom %> <%= client.nom %></p>
+    <p><strong>Email:</strong> <%= client.email %></p>
+    <p><strong>Téléphone:</strong> <%= client.telephone || 'Non renseigné' %></p>
+    <p><strong>Entreprise:</strong> <%= client.entreprise || 'Non renseigné' %></p>
+    <p><strong>Fonction:</strong> <%= client.fonction || 'Non renseigné' %></p>
+    <p><strong>Email vérifié:</strong> <%= client.email_verified ? '✅ Oui' : '❌ Non' %></p>
+    <p><strong>Date d'inscription:</strong> <%= new Date(client.created_at).toLocaleString() %></p>
+    <p><strong>Dernière connexion:</strong> <%= client.last_login ? new Date(client.last_login).toLocaleString() : 'Jamais' %></p>
+</div>
+
+<div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-top: 20px;">
+    <h3>Formations suivies</h3>
+    
+    <% if (formations && formations.length > 0) { %>
+        <table>
+            <thead>
+                <tr>
+                    <th>Formation</th>
+                    <th>Statut</th>
+                    <th>Date d'inscription</th>
+                    <th>Quiz</th>
+                    <th>Certificat</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% formations.forEach(function(f) { %>
+                <tr>
+                    <td><strong><%= f.formation_title %></strong></td>
+                    <td>
+                        <span class="status-<%= f.statut %>">
+                            <%= f.statut === 'inscrit' ? '📝 Inscrit' : 
+                               f.statut === 'en_cours' ? '📖 En cours' : 
+                               f.statut === 'termine' ? '✅ Terminé' : 
+                               f.statut === 'annule' ? '❌ Annulé' : f.statut %>
+                        </span>
+                    </td>
+                    <td><%= new Date(f.date_inscription).toLocaleDateString() %></td>
+                    <td>
+                        <% if (f.quiz_completed) { %>
+                            ✅ <%= f.quiz_score %>%
+                        <% } else { %>
+                            ⏳ En attente
+                        <% } %>
+                    </td>
+                    <td>
+                        <% if (f.certificate_generated) { %>
+                            ✅ Oui
+                        <% } else { %>
+                            ❌ Non
+                        <% } %>
+                    </td>
+                </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    <% } else { %>
+        <p>Aucune formation suivie</p>
+    <% } %>
+</div>
+
+<style>
+    .status-inscrit { color: #3498db; font-weight: bold; }
+    .status-en_cours { color: #f39c12; font-weight: bold; }
+    .status-termine { color: #27ae60; font-weight: bold; }
+    .status-annule { color: #e74c3c; font-weight: bold; }
+</style>
+
+<%- include('../partials/admin-footer') %>

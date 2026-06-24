@@ -1,0 +1,90 @@
+<%- include('../partials/admin-header') %>
+
+<div class="page-header">
+    <h2>Gestion des clients et inscriptions</h2>
+</div>
+
+<% if (typeof success_msg !== 'undefined' && success_msg) { %>
+    <div class="alert alert-success"><%= success_msg %></div>
+<% } %>
+<% if (typeof error_msg !== 'undefined' && error_msg) { %>
+    <div class="alert alert-error"><%= error_msg %></div>
+<% } %>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Client</th>
+            <th>Email</th>
+            <th>Inscription</th>
+            <th>Formation(s)</th>
+            <th>Statut</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        <% if (clients && clients.length > 0) { %>
+            <% clients.forEach(function(client) { %>
+            <tr>
+                <td><%= client.id %></td>
+                <td>
+                    <strong><%= client.prenom %> <%= client.nom %></strong>
+                </td>
+                <td><%= client.email %></td>
+                <td><%= new Date(client.date_inscription).toLocaleDateString() %></td>
+                <td>
+                    <% if (client.formations && client.formations.length > 0) { %>
+                        <% client.formations.forEach(function(f) { %>
+                            <div style="margin: 3px 0;">
+                                <strong><%= f.formation_title %></strong>
+                                <span class="status-<%= f.statut %>">
+                                    <%= f.statut === 'inscrit' ? '📝' : 
+                                       f.statut === 'en_cours' ? '📖' : 
+                                       f.statut === 'termine' ? '✅' : 
+                                       f.statut === 'annule' ? '❌' : '' %>
+                                </span>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <span style="color: #999;">Aucune formation</span>
+                    <% } %>
+                </td>
+                <td>
+                    <% if (client.formations && client.formations.length > 0) { %>
+                        <% client.formations.forEach(function(f) { %>
+                            <div style="margin: 3px 0;">
+                                <span class="status-<%= f.statut %>">
+                                    <%= f.statut === 'inscrit' ? '📝 Inscrit' : 
+                                       f.statut === 'en_cours' ? '📖 En cours' : 
+                                       f.statut === 'termine' ? '✅ Terminé' : 
+                                       f.statut === 'annule' ? '❌ Annulé' : f.statut %>
+                                </span>
+                                <% if (f.quiz_completed) { %>
+                                    ✅ Quiz: <%= f.quiz_score %>%
+                                <% } %>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <span style="color: #999;">-</span>
+                    <% } %>
+                </td>
+                <td style="white-space: nowrap;">
+                    <a href="/admin/clients/view/<%= client.id %>" class="btn-edit">Voir</a>
+                </td>
+            </tr>
+            <% }); %>
+        <% } else { %>
+            <tr><td colspan="7" style="text-align:center;">Aucun client inscrit</td></tr>
+        <% } %>
+    </tbody>
+</table>
+
+<style>
+    .status-inscrit { color: #3498db; font-weight: bold; }
+    .status-en_cours { color: #f39c12; font-weight: bold; }
+    .status-termine { color: #27ae60; font-weight: bold; }
+    .status-annule { color: #e74c3c; font-weight: bold; }
+</style>
+
+<%- include('../partials/admin-footer') %>

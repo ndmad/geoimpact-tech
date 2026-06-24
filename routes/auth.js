@@ -290,5 +290,183 @@ router.get('/messages/view/:id', requireAuth, async (req, res) => {
     }
 });
 
+// ============ GESTION DES INSCRIPTIONS ============
+
+router.get('/enrollments', requireAuth, async (req, res) => {
+    try {
+        // Requête qui affiche TOUS les clients avec leurs inscriptions (même sans formation)
+        const result = await pool.query(`
+            SELECT 
+                c.id as client_id,
+                c.nom,
+                c.prenom,
+                c.email,
+                c.telephone,
+                c.created_at as date_inscription,
+                c.email_verified,
+                cf.id as enrollment_id,
+                cf.formation_id,
+                cf.statut,
+                cf.quiz_completed,
+                cf.quiz_score,
+                cf.certificate_generated,
+                f.title as formation_title,
+                f.duration,
+                f.level,
+                f.price
+            FROM clients c
+            LEFT JOIN client_formations cf ON c.id = cf.client_id
+            LEFT JOIN formations f ON cf.formation_id = f.id
+            ORDER BY c.created_at DESC
+        `);
+        
+        console.log('📊 Clients trouvés:', result.rows.length);
+        
+        // Transformer les données pour les regrouper par client
+        const clientsMap = new Map();
+        
+        result.rows.forEach(row => {
+            if (!clientsMap.has(row.client_id)) {
+                clientsMap.set(row.client_id, {
+                    id: row.client_id,
+                    nom: row.nom,
+                    prenom: row.prenom,
+                    email: row.email,
+                    telephone: row.telephone,
+                    date_inscription: row.date_inscription,
+                    email_verified: row.email_verified,
+                    formations: []
+                });
+            }
+            
+            // Si l'utilisateur a une formation, l'ajouter
+            if (row.enrollment_id) {
+                clientsMap.get(row.client_id).formations.push({
+                    enrollment_id: row.enrollment_id,
+                    formation_id: row.formation_id,
+                    formation_title: row.formation_title,
+                    statut: row.statut || 'inscrit',
+                    quiz_completed: row.quiz_completed || false,
+                    quiz_score: row.quiz_score || 0,
+                    certificate_generated: row.certificate_generated || false,
+                    duration: row.duration,
+                    level: row.level,
+                    price: row.price
+                });
+            }
+        });
+        
+        const clients = Array.from(clientsMap.values());
+        
+        res.render('admin/enrollments', { 
+            clients: clients,
+            title: 'Gestion des clients et inscriptions',
+            success_msg: req.flash('success'),
+            error_msg: req.flash('error')
+        });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).send('Erreur serveur: ' + error.message);
+    }
+});
+
+// Voir les détails d'une inscription
+router.get('/enrollments/view/:id', requireAuth, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                cf.*,
+                c.nom,
+                c.prenom,
+                c.email,
+                c.telephone,
+                c.entreprise,
+                f.title as formation_title,
+                f.duration,
+                f.level,
+                f.price
+            FROM client_formations cf
+            JOIN clients c ON cf.client_id = c.id
+            JOIN formations f ON cf.formation_id = f.id
+            WHERE cf.id = $1
+        `, [req.params.id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).send('Inscription non trouvée');
+        }
+        
+        res.render('admin/enrollment-view', { 
+            enrollment: result.rows[0],
+            title: 'Détail de l\'inscription'
+        });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).send('Erreur serveur: ' + error.message);
+    }
+});
+
+// Mettre à jour le statut d'une inscription
+router.post('/enrollments/update-status/:id', requireAuth, async (req, res) => {
+    const { statut } = req.body;
+    const validStatuses = ['inscrit', 'en_cours', 'termine', 'annule'];
+    
+    if (!validStatuses.includes(statut)) {
+        return res.status(400).json({ error: 'Statut invalide' });
+    }
+    
+    try {
+        await pool.query(
+            'UPDATE client_formations SET statut = $1 WHERE id = $2',
+            [statut, req.params.id]
+        );
+        req.flash('success', 'Statut mis à jour avec succès');
+        res.redirect('/admin/enrollments');
+    } catch (error) {
+        console.error('Erreur:', error);
+        req.flash('error', 'Erreur lors de la mise à jour');
+        res.redirect('/admin/enrollments');
+    }
+});
+
+// Voir les détails d'un client
+router.get('/clients/view/:id', requireAuth, async (req, res) => {
+    try {
+        const clientId = req.params.id;
+        
+        // Récupérer les infos du client
+        const clientResult = await pool.query(
+            'SELECT id, email, nom, prenom, telephone, entreprise, fonction, created_at, last_login, email_verified FROM clients WHERE id = $1',
+            [clientId]
+        );
+        
+        if (clientResult.rows.length === 0) {
+            return res.status(404).send('Client non trouvé');
+        }
+        
+        // Récupérer les formations du client
+        const formationsResult = await pool.query(`
+            SELECT 
+                cf.*,
+                f.title as formation_title,
+                f.duration,
+                f.level,
+                f.price,
+                f.image_url
+            FROM client_formations cf
+            JOIN formations f ON cf.formation_id = f.id
+            WHERE cf.client_id = $1
+            ORDER BY cf.date_inscription DESC
+        `, [clientId]);
+        
+        res.render('admin/client-view', { 
+            client: clientResult.rows[0],
+            formations: formationsResult.rows,
+            title: 'Détail du client'
+        });
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).send('Erreur serveur: ' + error.message);
+    }
+});
 module.exports = router;
 module.exports.requireAuth = requireAuth;

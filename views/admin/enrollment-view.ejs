@@ -1,0 +1,64 @@
+<%- include('../partials/admin-header') %>
+
+<div class="page-header">
+    <h2>Détail de l'inscription</h2>
+    <a href="/admin/enrollments" class="btn">← Retour</a>
+</div>
+
+<div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+    <h3>Informations client</h3>
+    <p><strong>Nom:</strong> <%= enrollment.prenom %> <%= enrollment.nom %></p>
+    <p><strong>Email:</strong> <%= enrollment.email %></p>
+    <p><strong>Téléphone:</strong> <%= enrollment.telephone || 'Non renseigné' %></p>
+    <p><strong>Entreprise:</strong> <%= enrollment.entreprise || 'Non renseigné' %></p>
+    
+    <hr>
+    
+    <h3>Informations formation</h3>
+    <p><strong>Formation:</strong> <%= enrollment.formation_title %></p>
+    <p><strong>Durée:</strong> <%= enrollment.duration %></p>
+    <p><strong>Niveau:</strong> <%= enrollment.level %></p>
+    <p><strong>Prix:</strong> <%= enrollment.price ? enrollment.price + ' €' : 'Gratuit' %></p>
+    
+    <hr>
+    
+    <h3>Statut de l'inscription</h3>
+    <p><strong>Statut actuel:</strong> 
+        <span class="status-<%= enrollment.statut %>">
+            <%= enrollment.statut === 'inscrit' ? '📝 Inscrit' : 
+               enrollment.statut === 'en_cours' ? '📖 En cours' : 
+               enrollment.statut === 'termine' ? '✅ Terminé' : 
+               enrollment.statut === 'annule' ? '❌ Annulé' : enrollment.statut %>
+        </span>
+    </p>
+    <p><strong>Date d'inscription:</strong> <%= new Date(enrollment.date_inscription).toLocaleString() %></p>
+    
+    <div style="margin-top: 20px;">
+        <form action="/admin/enrollments/update-status/<%= enrollment.id %>" method="POST" style="display: inline-block;">
+            <label><strong>Changer le statut:</strong></label>
+            <select name="statut" onchange="this.form.submit()" style="padding: 8px; border-radius: 5px; margin-left: 10px;">
+                <option value="inscrit" <%= enrollment.statut === 'inscrit' ? 'selected' : '' %>>📝 Inscrit</option>
+                <option value="en_cours" <%= enrollment.statut === 'en_cours' ? 'selected' : '' %>>📖 En cours</option>
+                <option value="termine" <%= enrollment.statut === 'termine' ? 'selected' : '' %>>✅ Terminé</option>
+                <option value="annule" <%= enrollment.statut === 'annule' ? 'selected' : '' %>>❌ Annulé</option>
+            </select>
+        </form>
+    </div>
+    
+    <div style="margin-top: 20px;">
+        <p><strong>Quiz complété:</strong> <%= enrollment.quiz_completed ? '✅ Oui' : '❌ Non' %></p>
+        <% if (enrollment.quiz_completed) { %>
+            <p><strong>Score Quiz:</strong> <%= enrollment.quiz_score %>%</p>
+        <% } %>
+        <p><strong>Certificat généré:</strong> <%= enrollment.certificate_generated ? '✅ Oui' : '❌ Non' %></p>
+    </div>
+</div>
+
+<style>
+    .status-inscrit { color: #3498db; font-weight: bold; }
+    .status-en_cours { color: #f39c12; font-weight: bold; }
+    .status-termine { color: #27ae60; font-weight: bold; }
+    .status-annule { color: #e74c3c; font-weight: bold; }
+</style>
+
+<%- include('../partials/admin-footer') %>

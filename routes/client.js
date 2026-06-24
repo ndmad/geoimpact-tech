@@ -162,12 +162,16 @@ router.get('/forgot-password', (req, res) => {
 // ============ DASHBOARD ============
 router.get('/dashboard', authenticateToken, async (req, res) => {
     try {
+        console.log('🔵 Dashboard client - ID:', req.clientId);
+        
         const clientResult = await pool.query(
             'SELECT id, email, nom, prenom, telephone, entreprise, fonction, created_at, last_login FROM clients WHERE id = $1',
             [req.clientId]
         );
+        console.log('📊 Client trouvé:', clientResult.rows.length > 0);
         
         if (clientResult.rows.length === 0) {
+            console.log('❌ Client non trouvé');
             return res.redirect('/client/login');
         }
         
@@ -179,6 +183,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
              ORDER BY cf.date_inscription DESC`,
             [req.clientId]
         );
+        console.log('📊 Formations trouvées:', formationsResult.rows.length);
         
         const stats = {
             totalFormations: formationsResult.rows.length,
@@ -188,13 +193,21 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
         };
         
         res.render('client/dashboard', {
+            // Données SEO
+            title: 'Tableau de bord - Espace Client',
+            seoTitle: 'Mon espace client - GeoImpact Tech',
+            metaDescription: 'Gérez vos formations, suivez votre progression et accédez à vos certificats depuis votre espace client GeoImpact Tech.',
+            currentUrl: req.protocol + '://' + req.get('host') + req.originalUrl,
+            
+            // Données de la page
             client: clientResult.rows[0],
             formations: formationsResult.rows,
             stats: stats
         });
     } catch (error) {
-        console.error('Erreur dashboard:', error);
-        res.status(500).send('Erreur serveur');
+        console.error('❌ Erreur dashboard:', error);
+        console.error('❌ Stack:', error.stack);
+        res.status(500).send('Erreur serveur: ' + error.message);
     }
 });
 
