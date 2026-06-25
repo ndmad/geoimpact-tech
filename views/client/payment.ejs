@@ -1,0 +1,151 @@
+<% title = 'Paiement - ' + formation.title %>
+<% currentPage = 'client' %>
+<%- include('../partials/header') %>
+
+<section class="payment-section" style="padding: 120px 0 60px;">
+    <div class="container">
+        <div class="payment-container" style="max-width: 600px; margin: 0 auto;">
+            <div class="payment-card" style="background: white; border-radius: 15px; padding: 40px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);">
+                <h2 style="text-align: center; margin-bottom: 30px; color: var(--primary);">
+                    <i class="fas fa-credit-card"></i> Paiement
+                </h2>
+                
+                <div class="formation-summary" style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
+                    <h3><%= formation.title %></h3>
+                    <p><strong>Montant :</strong> <%= (formation.price * 655).toLocaleString() %> FCFA</p>
+                    <p><strong>Durée :</strong> <%= formation.duration %></p>
+                    <p><strong>Niveau :</strong> <%= formation.level %></p>
+                </div>
+                
+                <form id="paymentForm">
+                    <div class="form-group" style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Méthode de paiement</label>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                            <div class="payment-option" style="border: 2px solid #ddd; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s;" onclick="selectPayment('card')">
+                                <i class="fas fa-credit-card" style="font-size: 24px; color: #0a5c36;"></i>
+                                <p style="font-size: 12px; margin-top: 5px;">Carte bancaire</p>
+                            </div>
+                            <div class="payment-option" style="border: 2px solid #ddd; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s;" onclick="selectPayment('orange')">
+                                <i class="fas fa-mobile-alt" style="font-size: 24px; color: #ff6600;"></i>
+                                <p style="font-size: 12px; margin-top: 5px;">Orange Money</p>
+                            </div>
+                            <div class="payment-option" style="border: 2px solid #ddd; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s;" onclick="selectPayment('wave')">
+                                <i class="fas fa-wifi" style="font-size: 24px; color: #1a8cff;"></i>
+                                <p style="font-size: 12px; margin-top: 5px;">Wave</p>
+                            </div>
+                        </div>
+                        <input type="hidden" id="paymentMethod" name="paymentMethod" value="">
+                    </div>
+                    
+                    <div id="cardDetails" style="display: none; margin-top: 20px;">
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label>Numéro de carte</label>
+                            <input type="text" id="cardNumber" placeholder="4242 4242 4242 4242" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label>Date d'expiration</label>
+                                <input type="text" id="cardExpiry" placeholder="MM/AA" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+                            <div class="form-group">
+                                <label>CVC</label>
+                                <input type="text" id="cardCvc" placeholder="123" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="mobileMoneyDetails" style="display: none; margin-top: 20px;">
+                        <div class="form-group" style="margin-bottom: 15px;">
+                            <label>Numéro de téléphone</label>
+                            <input type="tel" id="phoneNumber" placeholder="77 123 45 67" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
+                        </div>
+                        <p style="font-size: 12px; color: #666;">Vous recevrez une demande de paiement sur votre téléphone.</p>
+                    </div>
+                    
+                    <button type="submit" class="btn" style="width: 100%; margin-top: 30px; padding: 15px;">
+                        <i class="fas fa-lock"></i> Payer <%= (formation.price * 655).toLocaleString() %> FCFA
+                    </button>
+                </form>
+                
+                <p style="text-align: center; margin-top: 15px; font-size: 12px; color: #999;">
+                    <i class="fas fa-shield-alt"></i> Paiement sécurisé
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    function selectPayment(method) {
+        document.getElementById('paymentMethod').value = method;
+        
+        // Réinitialiser les styles
+        document.querySelectorAll('.payment-option').forEach(el => {
+            el.style.borderColor = '#ddd';
+            el.style.background = 'transparent';
+        });
+        
+        // Mettre en évidence la sélection
+        const options = document.querySelectorAll('.payment-option');
+        const index = method === 'card' ? 0 : method === 'orange' ? 1 : 2;
+        options[index].style.borderColor = '#27ae60';
+        options[index].style.background = '#e8f5e9';
+        
+        // Afficher les détails appropriés
+        document.getElementById('cardDetails').style.display = method === 'card' ? 'block' : 'none';
+        document.getElementById('mobileMoneyDetails').style.display = method === 'orange' || method === 'wave' ? 'block' : 'none';
+    }
+    
+    document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const method = document.getElementById('paymentMethod').value;
+        if (!method) {
+            alert('Veuillez sélectionner un moyen de paiement');
+            return;
+        }
+        
+        const submitBtn = document.querySelector('#paymentForm button');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement en cours...';
+        
+        try {
+            const response = await fetch('/payment/api/process-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    formationId: <%= formation.id %>,
+                    paymentMethod: method,
+                    cardNumber: document.getElementById('cardNumber')?.value,
+                    phoneNumber: document.getElementById('phoneNumber')?.value
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('✅ Paiement réussi ! Vous êtes maintenant inscrit à la formation.');
+                window.location.href = '/client/my-formations';
+            } else {
+                alert('❌ Erreur: ' + data.error);
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue. Veuillez réessayer.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="fas fa-lock"></i> Payer ' + <%= (formation.price * 655).toLocaleString() %> + ' FCFA';
+        }
+    });
+</script>
+
+<style>
+    body.dark-mode .payment-card {
+        background: #1a1a2e;
+    }
+    body.dark-mode .formation-summary {
+        background: #0f0f1a;
+    }
+</style>
+
+<%- include('../partials/footer') %>

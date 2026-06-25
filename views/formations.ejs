@@ -61,17 +61,16 @@
                         
                         <% if (clientConnected) { %>
                             <% if (hasPrice) { %>
-                                <button onclick="payForFormation(<%= formation.id %>, '<%= formation.title %>', <%= priceFCFA %>)" 
-                                        class="btn btn-enroll" style="flex: 1; background: #f39c12;">
+                                <a href="/payment/checkout/<%= formation.id %>" class="btn btn-enroll" style="flex: 1; background: #f39c12; text-align: center;">
                                     <i class="fas fa-credit-card"></i> Acheter (<%= priceFCFA.toLocaleString() %> FCFA)
-                                </button>
+                                </a>
                             <% } else { %>
                                 <button onclick="enrollToFormation(<%= formation.id %>)" class="btn btn-enroll" style="flex: 1; background: #27ae60;">
                                     <i class="fas fa-calendar-plus"></i> S'inscrire
                                 </button>
                             <% } %>
                         <% } else { %>
-                            <a href="/client/login" class="btn btn-enroll" style="flex: 1; background: #3498db;">
+                            <a href="/client/login" class="btn btn-enroll" style="flex: 1; background: #3498db; text-align: center;">
                                 <i class="fas fa-sign-in-alt"></i> Se connecter pour acheter
                             </a>
                         <% } %>
@@ -208,29 +207,43 @@
     
     // Fonction de paiement Stripe
     async function payForFormation(formationId, title, priceFCFA) {
-        if (!confirm(`Confirmez-vous l'achat de la formation "${title}" pour ${priceFCFA.toLocaleString()} FCFA ?`)) {
-            return;
-        }
-        
-        try {
-            const response = await fetch('/payment/api/create-checkout-session', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ formationId: formationId })
-            });
-            
-            const data = await response.json();
-            
-            if (data.url) {
-                window.location.href = data.url;
-            } else {
-                alert('Erreur lors de la création de la session de paiement: ' + (data.error || ''));
-            }
-        } catch (error) {
-            console.error('Erreur:', error);
-            alert('Une erreur est survenue. Veuillez réessayer.');
-        }
+    console.log('💰 payForFormation appelée');
+    console.log('Formation ID:', formationId);
+    console.log('Titre:', title);
+    console.log('Prix FCFA:', priceFCFA);
+    
+    const priceEuro = Math.round(priceFCFA / 655);
+    
+    if (!confirm(`Confirmez-vous l'achat de la formation "${title}" pour ${priceFCFA.toLocaleString()} FCFA (${priceEuro}€) ?`)) {
+        return;
     }
+    
+    try {
+        console.log('📤 Envoi de la requête...');
+        
+        const response = await fetch('/payment/api/create-checkout-session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ formationId: formationId })
+        });
+        
+        console.log('📥 Réponse reçue - Status:', response.status);
+        
+        const data = await response.json();
+        console.log('📦 Données reçues:', data);
+        
+        if (data.url) {
+            window.location.href = data.url;
+        } else if (data.error) {
+            alert('Erreur: ' + data.error);
+        } else {
+            alert('Une erreur est survenue');
+        }
+    } catch (error) {
+        console.error('❌ Erreur détaillée:', error);
+        alert('Une erreur est survenue. Veuillez réessayer.');
+    }
+}
 </script>
 
 <%- include('partials/footer') %>

@@ -544,6 +544,86 @@ router.get('/clients/delete/:id', requireAuth, async (req, res) => {
     }
 });
 
+const { sendNewFormationNotification } = require('../utils/emailService');
+
+router.post('/formations/add', requireAuth, async (req, res) => {
+    try {
+        const { title, description, duration, level, category, availability, image_url, price } = req.body;
+        
+        const result = await pool.query(
+            'INSERT INTO formations (title, description, duration, level, category, availability, image_url, price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
+            [title, description, duration, level, category, availability, image_url, price || null]
+        );
+        
+        const formationId = result.rows[0].id;
+        
+        // Envoyer une notification par email à tous les abonnés de la newsletter
+        try {
+            const subscribers = await pool.query('SELECT email FROM newsletter_subscribers WHERE is_active = true');
+            
+            for (const sub of subscribers.rows) {
+                await sendNewFormationNotification(sub.email, title, description, formationId);
+            }
+            console.log(`📧 Notification de nouvelle formation envoyée à ${subscribers.rows.length} abonnés`);
+        } catch (emailError) {
+            console.error('Erreur envoi notifications:', emailError);
+        }
+        
+        // Envoyer une notification push à tous les abonnés
+        await sendPushNotificationToAll(
+            '📚 Nouvelle formation !',
+            `${title} - ${duration} - Niveau ${level}`,
+            `/formations/${formationId}`
+        );
+        
+        req.flash('success', 'Formation ajoutée avec succès !');
+        res.redirect('/admin/formations');
+    } catch (error) {
+        console.error('Erreur:', error);
+        req.flash('error', 'Erreur lors de l\'ajout');
+        res.redirect('/admin/formations/new');
+    }
+});
+
+// Export des clients en CSV
+router.get('/clients/export-csv', requireAuth, async (req, res) => {
+    try {
+        const result = await pool.query(`
+            SELECT 
+                c.id,
+                c.nom,
+                c.prenom,
+                c.email,
+                c.telephone,
+                c.entreprise,
+                c.fonction,
+                c.created_at as date_inscription,
+                c.last_login,
+                c.email_verified,
+                COUNT(cf.id) as nb_formations
+            FROM clients c
+            LEFT JOIN client_formations cf ON c.id = cf.client_id
+            GROUP BY c.id
+            ORDER BY c.created_at DESC
+        `);
+        
+        // Créer le CSV
+        let csv = 'ID,Nom,Prénom,Email,Téléphone,Entreprise,Fonction,Date inscription,Dernière connexion,Email vérifié,Nombre formations\n';
+        
+        result.rows.forEach(row => {
+            csv += `${row.id},${row.nom},${row.prenom},${row.email},${row.telephone || ''},${row.entreprise || ''},${row.fonction || ''},${new Date(row.date_inscription).toLocaleDateString()},${row.last_login ? new Date(row.last_login).toLocaleDateString() : 'Jamais'},${row.email_verified ? 'Oui' : 'Non'},${row.nb_formations}\n`;
+        });
+        
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename=clients_${new Date().toISOString().slice(0,10)}.csv`);
+        res.send(csv);
+    } catch (error) {
+        console.error('Erreur export:', error);
+        req.flash('error', 'Erreur lors de l\'export');
+        res.redirect('/admin/enrollments');
+    }
+});
+
 
 module.exports = router;
 module.exports.requireAuth = requireAuth;

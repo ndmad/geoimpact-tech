@@ -43,6 +43,11 @@ self.addEventListener('activate', (event) => {
 
 // Interception des requêtes
 self.addEventListener('fetch', (event) => {
+  // Ignorer les requêtes POST pour éviter l'erreur
+  if (event.request.method === 'POST') {
+    event.respondWith(fetch(event.request));
+    return;
+}
   const url = new URL(event.request.url);
   
   // Stratégie: Cache d'abord, puis réseau

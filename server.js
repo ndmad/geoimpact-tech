@@ -91,12 +91,16 @@ const rateLimit = require('express-rate-limit');
 // ============ SÉCURITÉ ============
 
 // Helmet pour les headers de sécurité
+// ============ SÉCURITÉ ============
+
+// Helmet pour les headers de sécurité - VERSION CORRIGÉE
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
             scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
+            scriptSrcAttr: ["'unsafe-inline'"],  // ← AJOUTER CETTE LIGNE
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
             imgSrc: ["'self'", "data:", "https://images.unsplash.com", "https://randomuser.me"],
             connectSrc: ["'self'"],

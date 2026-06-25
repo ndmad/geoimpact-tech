@@ -785,7 +785,7 @@ router.get('/api/check-session', authenticateToken, (req, res) => {
 
 // Dans routes/client.js, modifiez la route d'inscription
 const crypto = require('crypto');
-const { sendVerificationEmail } = require('../utils/emailService'); // Changer ici
+const { sendVerificationEmail } = require('../utils/emailService');
 
 router.post('/api/register', [
     body('email').isEmail().withMessage('Email invalide'),
@@ -807,8 +807,6 @@ router.post('/api/register', [
         }
         
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-        
-        // Générer un token de vérification
         const verificationToken = crypto.randomBytes(32).toString('hex');
         
         const result = await pool.query(
@@ -817,7 +815,7 @@ router.post('/api/register', [
             [email, hashedPassword, nom, prenom, telephone || null, entreprise || null, fonction || null, verificationToken]
         );
         
-        // Envoyer email de vérification (au lieu de bienvenue)
+        // Envoyer email de vérification
         try {
             await sendVerificationEmail(email, `${prenom} ${nom}`, verificationToken);
             console.log(`📧 Email de vérification envoyé à ${email}`);
@@ -825,18 +823,17 @@ router.post('/api/register', [
             console.error('Erreur envoi email:', emailError);
         }
         
-        // Ne pas connecter automatiquement - rediriger vers page de confirmation
         res.render('client/register', { 
             error: null, 
             success: '✅ Inscription réussie ! Un email de vérification vous a été envoyé. Veuillez activer votre compte avant de vous connecter.' 
         });
-        
     } catch (error) {
         console.error('Erreur inscription:', error);
         res.render('client/register', { error: 'Erreur lors de l\'inscription', success: null });
     }
 });
 
+// Vérification d'email
 // Vérification d'email
 router.get('/verify-email/:token', async (req, res) => {
     const { token } = req.params;
@@ -894,22 +891,13 @@ router.post('/api/login', [
     const { email, password } = req.body;
     
     try {
-        const result = await pool.query('SELECT * FROM clients WHERE email = $1', [email]);
+        const result = await pool.query('SELECT * FROM clients WHERE email = $1 AND is_active = true', [email]);
         
         if (result.rows.length === 0) {
             return res.render('client/login', { error: 'Email ou mot de passe incorrect', success: null });
         }
         
         const client = result.rows[0];
-        
-        // Vérifier si le compte est bloqué
-        if (client.locked_until && new Date(client.locked_until) > new Date()) {
-            const minutesLeft = Math.ceil((new Date(client.locked_until) - new Date()) / 60000);
-            return res.render('client/login', { 
-                error: `⚠️ Compte bloqué pour ${minutesLeft} minutes (trop de tentatives)`, 
-                success: null 
-            });
-        }
         
         // Vérifier si l'email est validé
         if (!client.email_verified) {
