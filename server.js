@@ -94,16 +94,25 @@ const rateLimit = require('express-rate-limit');
 // ============ SÉCURITÉ ============
 
 // Helmet pour les headers de sécurité - VERSION CORRIGÉE
+// ============ SÉCURITÉ ============
+
+// Helmet pour les headers de sécurité
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
-            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com"],
-            scriptSrcAttr: ["'unsafe-inline'"],  // ← AJOUTER CETTE LIGNE
+            scriptSrc: [
+                "'self'", 
+                "'unsafe-inline'", 
+                "https://cdnjs.cloudflare.com",
+                "https://js.stripe.com"  // ← AJOUTER CETTE LIGNE
+            ],
+            scriptSrcAttr: ["'unsafe-inline'"],
             fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
             imgSrc: ["'self'", "data:", "https://images.unsplash.com", "https://randomuser.me"],
-            connectSrc: ["'self'"],
+            connectSrc: ["'self'", "https://api.stripe.com"],  // ← AJOUTER POUR STRIPE
+            frameSrc: ["'self'", "https://js.stripe.com"],  // ← AJOUTER POUR STRIPE
         },
     },
 }));
@@ -215,13 +224,17 @@ app.get('/formations', async (req, res) => {
         let clientId = null;
         
         const token = req.cookies?.clientToken;
+        console.log('🔍 Token sur /formations:', token ? 'Présent' : 'Absent'); // AJOUTER
         if (token) {
             try {
                 const jwt = require('jsonwebtoken');
                 const decoded = jwt.verify(token, process.env.JWT_SECRET || 'client_secret_key_2024');
                 clientConnected = true;
                 clientId = decoded.id;
-            } catch (e) {}
+                console.log('✅ Client connecté:', clientId); // AJOUTER
+            } catch (e) {
+                console.log('❌ Token invalide:', e.message); // AJOUTER
+            }
         }
         
         res.render('formations', { 

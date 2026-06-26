@@ -1,74 +1,42 @@
 <% title = 'Paiement - ' + formation.title %>
 <% currentPage = 'client' %>
+<% seoTitle = 'Paiement - ' + formation.title + ' - GeoImpact Tech' %>
+<% metaDescription = 'Paiement sécurisé pour la formation ' + formation.title %>
 <%- include('../partials/header') %>
+
+<script src="https://js.stripe.com/v3/"></script>
 
 <section class="payment-section" style="padding: 120px 0 60px;">
     <div class="container">
         <div class="payment-container" style="max-width: 600px; margin: 0 auto;">
             <div class="payment-card" style="background: white; border-radius: 15px; padding: 40px; box-shadow: 0 5px 20px rgba(0,0,0,0.1);">
                 <h2 style="text-align: center; margin-bottom: 30px; color: var(--primary);">
-                    <i class="fas fa-credit-card"></i> Paiement
+                    <i class="fas fa-credit-card"></i> Paiement sécurisé
                 </h2>
                 
                 <div class="formation-summary" style="background: #f9f9f9; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
                     <h3><%= formation.title %></h3>
-                    <p><strong>Montant :</strong> <%= (formation.price * 655).toLocaleString() %> FCFA</p>
+                    <p><strong>Montant :</strong> <%= Math.round(formation.price * 655).toLocaleString() %> FCFA (<%= formation.price %> €)</p>
                     <p><strong>Durée :</strong> <%= formation.duration %></p>
                     <p><strong>Niveau :</strong> <%= formation.level %></p>
                 </div>
                 
-                <form id="paymentForm">
-                    <div class="form-group" style="margin-bottom: 20px;">
-                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Méthode de paiement</label>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                            <div class="payment-option" style="border: 2px solid #ddd; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s;" onclick="selectPayment('card')">
-                                <i class="fas fa-credit-card" style="font-size: 24px; color: #0a5c36;"></i>
-                                <p style="font-size: 12px; margin-top: 5px;">Carte bancaire</p>
-                            </div>
-                            <div class="payment-option" style="border: 2px solid #ddd; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s;" onclick="selectPayment('orange')">
-                                <i class="fas fa-mobile-alt" style="font-size: 24px; color: #ff6600;"></i>
-                                <p style="font-size: 12px; margin-top: 5px;">Orange Money</p>
-                            </div>
-                            <div class="payment-option" style="border: 2px solid #ddd; border-radius: 10px; padding: 15px; text-align: center; cursor: pointer; transition: all 0.3s;" onclick="selectPayment('wave')">
-                                <i class="fas fa-wifi" style="font-size: 24px; color: #1a8cff;"></i>
-                                <p style="font-size: 12px; margin-top: 5px;">Wave</p>
-                            </div>
-                        </div>
-                        <input type="hidden" id="paymentMethod" name="paymentMethod" value="">
-                    </div>
-                    
-                    <div id="cardDetails" style="display: none; margin-top: 20px;">
-                        <div class="form-group" style="margin-bottom: 15px;">
-                            <label>Numéro de carte</label>
-                            <input type="text" id="cardNumber" placeholder="4242 4242 4242 4242" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
-                        </div>
-                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
-                            <div class="form-group">
-                                <label>Date d'expiration</label>
-                                <input type="text" id="cardExpiry" placeholder="MM/AA" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
-                            </div>
-                            <div class="form-group">
-                                <label>CVC</label>
-                                <input type="text" id="cardCvc" placeholder="123" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div id="mobileMoneyDetails" style="display: none; margin-top: 20px;">
-                        <div class="form-group" style="margin-bottom: 15px;">
-                            <label>Numéro de téléphone</label>
-                            <input type="tel" id="phoneNumber" placeholder="77 123 45 67" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px;">
-                        </div>
-                        <p style="font-size: 12px; color: #666;">Vous recevrez une demande de paiement sur votre téléphone.</p>
-                    </div>
-                    
-                    <button type="submit" class="btn" style="width: 100%; margin-top: 30px; padding: 15px;">
-                        <i class="fas fa-lock"></i> Payer <%= (formation.price * 655).toLocaleString() %> FCFA
-                    </button>
-                </form>
+                <!-- Formulaire de paiement -->
+                <div id="stripe-payment" style="margin-bottom: 20px;">
+                    <div id="payment-element"></div>
+                    <div id="payment-message" style="color: #e74c3c; margin-top: 15px; display: none;"></div>
+                </div>
+                
+                <button id="submit-payment" class="btn" style="width: 100%; padding: 15px; display: block; background: #27ae60; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;">
+                    <i class="fas fa-lock"></i> Payer <%= Math.round(formation.price * 655).toLocaleString() %> FCFA
+                </button>
+                
+                <div id="loading" style="text-align: center; padding: 20px; display: none;">
+                    <i class="fas fa-spinner fa-spin"></i> Traitement en cours...
+                </div>
                 
                 <p style="text-align: center; margin-top: 15px; font-size: 12px; color: #999;">
-                    <i class="fas fa-shield-alt"></i> Paiement sécurisé
+                    <i class="fas fa-shield-alt"></i> Paiement sécurisé par Stripe
                 </p>
             </div>
         </div>
@@ -76,67 +44,106 @@
 </section>
 
 <script>
-    function selectPayment(method) {
-        document.getElementById('paymentMethod').value = method;
-        
-        // Réinitialiser les styles
-        document.querySelectorAll('.payment-option').forEach(el => {
-            el.style.borderColor = '#ddd';
-            el.style.background = 'transparent';
-        });
-        
-        // Mettre en évidence la sélection
-        const options = document.querySelectorAll('.payment-option');
-        const index = method === 'card' ? 0 : method === 'orange' ? 1 : 2;
-        options[index].style.borderColor = '#27ae60';
-        options[index].style.background = '#e8f5e9';
-        
-        // Afficher les détails appropriés
-        document.getElementById('cardDetails').style.display = method === 'card' ? 'block' : 'none';
-        document.getElementById('mobileMoneyDetails').style.display = method === 'orange' || method === 'wave' ? 'block' : 'none';
-    }
+    const stripe = Stripe('<%= stripePublicKey %>');
+    const formationId = <%= formation.id %>;
+    let elements = null;
     
-    document.getElementById('paymentForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const method = document.getElementById('paymentMethod').value;
-        if (!method) {
-            alert('Veuillez sélectionner un moyen de paiement');
-            return;
-        }
-        
-        const submitBtn = document.querySelector('#paymentForm button');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Traitement en cours...';
-        
+    async function initializePayment() {
         try {
-            const response = await fetch('/payment/api/process-payment', {
+            console.log('🔵 Initialisation du paiement...');
+            
+            const response = await fetch('/payment/api/create-payment-intent', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    formationId: <%= formation.id %>,
-                    paymentMethod: method,
-                    cardNumber: document.getElementById('cardNumber')?.value,
-                    phoneNumber: document.getElementById('phoneNumber')?.value
-                })
+                body: JSON.stringify({ formationId: formationId, paymentMethod: 'card' })
             });
             
             const data = await response.json();
+            console.log('📦 Réponse:', data);
             
-            if (data.success) {
-                alert('✅ Paiement réussi ! Vous êtes maintenant inscrit à la formation.');
-                window.location.href = '/client/my-formations';
-            } else {
-                alert('❌ Erreur: ' + data.error);
+            if (data.error) {
+                document.getElementById('payment-message').textContent = data.error;
+                document.getElementById('payment-message').style.display = 'block';
+                return;
             }
+            
+            const elements = stripe.elements({
+                clientSecret: data.clientSecret,
+                appearance: {
+                    theme: 'stripe',
+                    variables: {
+                        colorPrimary: '#0a5c36',
+                        colorBackground: '#ffffff',
+                        colorText: '#30313d',
+                        colorDanger: '#df1b41',
+                        fontFamily: 'Arial, sans-serif',
+                        spacingUnit: '4px',
+                        borderRadius: '8px',
+                    },
+                },
+            });
+            
+            const paymentElement = elements.create('payment');
+            paymentElement.mount('#payment-element');
+            
+            // Gérer le bouton de paiement
+            document.getElementById('submit-payment').addEventListener('click', async (e) => {
+                e.preventDefault();
+                
+                const submitBtn = document.getElementById('submit-payment');
+                const loadingDiv = document.getElementById('loading');
+                const messageDiv = document.getElementById('payment-message');
+                
+                submitBtn.style.display = 'none';
+                loadingDiv.style.display = 'block';
+                messageDiv.style.display = 'none';
+                
+                const { error } = await stripe.confirmPayment({
+                    elements,
+                    confirmParams: {
+                        return_url: 'http://localhost:3000/payment/success',
+                        receipt_email: '<%= clientEmail %>',
+                    },
+                    redirect: 'if_required',
+                });
+                
+                if (error) {
+                    messageDiv.textContent = error.message;
+                    messageDiv.style.display = 'block';
+                    submitBtn.style.display = 'block';
+                    loadingDiv.style.display = 'none';
+                } else {
+                    // Paiement réussi
+                    const confirmResponse = await fetch('/payment/api/confirm-payment', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            paymentIntentId: data.clientSecret.split('_secret_')[0],
+                            formationId: formationId
+                        })
+                    });
+                    
+                    const result = await confirmResponse.json();
+                    
+                    if (result.success) {
+                        window.location.href = '/client/my-formations?payment_success=true';
+                    } else {
+                        messageDiv.textContent = result.error || 'Erreur lors de la confirmation';
+                        messageDiv.style.display = 'block';
+                        submitBtn.style.display = 'block';
+                        loadingDiv.style.display = 'none';
+                    }
+                }
+            });
         } catch (error) {
-            console.error('Erreur:', error);
-            alert('Une erreur est survenue. Veuillez réessayer.');
-        } finally {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-lock"></i> Payer ' + <%= (formation.price * 655).toLocaleString() %> + ' FCFA';
+            console.error('❌ Erreur:', error);
+            document.getElementById('payment-message').textContent = 'Erreur de chargement du paiement';
+            document.getElementById('payment-message').style.display = 'block';
         }
-    });
+    }
+    
+    // Initialiser au chargement
+    document.addEventListener('DOMContentLoaded', initializePayment);
 </script>
 
 <style>

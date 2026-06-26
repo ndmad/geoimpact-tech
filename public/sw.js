@@ -43,12 +43,25 @@ self.addEventListener('activate', (event) => {
 
 // Interception des requêtes
 self.addEventListener('fetch', (event) => {
-  // Ignorer les requêtes POST pour éviter l'erreur
+  const url = new URL(event.request.url);
+  
+  // ✅ IGNORER LES REQUÊTES STRIPE
+  if (url.hostname === 'js.stripe.com' || url.hostname === 'api.stripe.com') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
+  // ✅ IGNORER LES REQUÊTES POST
   if (event.request.method === 'POST') {
     event.respondWith(fetch(event.request));
     return;
-}
-  const url = new URL(event.request.url);
+  }
+  
+  // ✅ IGNORER LES REQUÊTES VERS L'API
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
   
   // Stratégie: Cache d'abord, puis réseau
   if (url.origin === location.origin) {
@@ -59,13 +72,8 @@ self.addEventListener('fetch', (event) => {
           return response || fetch(event.request);
         })
       );
-    } 
-    // Pour les API, ne pas mettre en cache
-    else if (url.pathname.startsWith('/api/')) {
-      event.respondWith(fetch(event.request));
-    }
-    // Pour les autres ressources
-    else {
+    } else {
+      // Pour les autres ressources
       event.respondWith(
         caches.match(event.request).then((response) => {
           return response || fetch(event.request).then((fetchResponse) => {
@@ -80,7 +88,7 @@ self.addEventListener('fetch', (event) => {
       );
     }
   } else {
-    // Pour les ressources externes
+    // Pour les ressources externes (hors Stripe)
     event.respondWith(fetch(event.request));
   }
 });

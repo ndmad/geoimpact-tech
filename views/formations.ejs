@@ -14,7 +14,6 @@
 </section>
 
 <script>
-    // Appliquer le mode sombre immédiatement
     (function() {
         const savedDarkMode = localStorage.getItem('darkMode');
         if (savedDarkMode === null || savedDarkMode === 'true') {
@@ -37,7 +36,6 @@
         
         <div class="formation-cards">
             <% formations.forEach(formation => { 
-                // Conversion Euro -> FCFA (1€ = 655 FCFA)
                 var priceFCFA = formation.price ? Math.round(formation.price * 655) : 0;
                 var hasPrice = priceFCFA > 0;
             %>
@@ -219,26 +217,11 @@
     }
     
     try {
-        console.log('📤 Envoi de la requête...');
+        console.log('📤 Redirection vers la page de paiement...');
         
-        const response = await fetch('/payment/api/create-checkout-session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ formationId: formationId })
-        });
+        // Rediriger vers la page de paiement Stripe
+        window.location.href = `/payment/checkout/${formationId}`;
         
-        console.log('📥 Réponse reçue - Status:', response.status);
-        
-        const data = await response.json();
-        console.log('📦 Données reçues:', data);
-        
-        if (data.url) {
-            window.location.href = data.url;
-        } else if (data.error) {
-            alert('Erreur: ' + data.error);
-        } else {
-            alert('Une erreur est survenue');
-        }
     } catch (error) {
         console.error('❌ Erreur détaillée:', error);
         alert('Une erreur est survenue. Veuillez réessayer.');

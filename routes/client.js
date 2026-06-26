@@ -214,6 +214,8 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
 // ============ MES FORMATIONS ============
 router.get('/my-formations', authenticateToken, async (req, res) => {
     try {
+        console.log('🔵 Mes formations - Client ID:', req.clientId);
+        
         const result = await pool.query(
             `SELECT cf.*, f.title, f.duration, f.level, f.category, f.image_url, f.description
              FROM client_formations cf
@@ -223,7 +225,10 @@ router.get('/my-formations', authenticateToken, async (req, res) => {
             [req.clientId]
         );
         
-        console.log('Formations trouvées:', result.rows.length);
+        console.log('📊 Formations trouvées:', result.rows.length);
+        if (result.rows.length > 0) {
+            console.log('📊 Première formation:', result.rows[0].title);
+        }
         
         res.render('client/my-formations', { 
             formations: result.rows 
@@ -910,9 +915,7 @@ router.post('/api/login', [
         const validPassword = await bcrypt.compare(password, client.password);
         
         if (!validPassword) {
-            // Incrémenter le compteur de tentatives
             const attempts = (client.login_attempts || 0) + 1;
-            
             if (attempts >= 5) {
                 await pool.query(
                     'UPDATE clients SET login_attempts = $1, locked_until = NOW() + INTERVAL \'15 minutes\' WHERE id = $2',
@@ -923,7 +926,6 @@ router.post('/api/login', [
                     success: null 
                 });
             }
-            
             await pool.query('UPDATE clients SET login_attempts = $1 WHERE id = $2', [attempts, client.id]);
             return res.render('client/login', { 
                 error: `Email ou mot de passe incorrect (tentative ${attempts}/5)`, 
@@ -931,7 +933,6 @@ router.post('/api/login', [
             });
         }
         
-        // Réinitialiser les tentatives
         await pool.query('UPDATE clients SET login_attempts = 0, locked_until = NULL, last_login = NOW() WHERE id = $1', [client.id]);
         
         const token = jwt.sign(
@@ -940,12 +941,21 @@ router.post('/api/login', [
             { expiresIn: '7d' }
         );
         
+        console.log('🔐 Token généré:', token.substring(0, 20) + '...');
+        console.log('🔐 Email:', client.email);
+        
+        // Définir le cookie avec des options plus permissives pour le test
         res.cookie('clientToken', token, { 
-            httpOnly: true, 
+            httpOnly: true,
+            secure: false,  // ← FORCER À false pour localhost
             maxAge: 7 * 24 * 60 * 60 * 1000,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict'
+            sameSite: 'lax',
+            path: '/'
         });
+        
+        console.log('🍪 Cookie clientToken défini');
+        console.log('🍪 Cookies actuels:', req.cookies);
+        
         res.redirect('/client/dashboard');
     } catch (error) {
         console.error('Erreur connexion:', error);
@@ -1051,6 +1061,31 @@ router.post('/api/reset-password/:token', async (req, res) => {
     } catch (error) {
         console.error('Erreur:', error);
         res.status(500).json({ error: 'Erreur lors de la réinitialisation' });
+    }
+});
+
+// Télécharger une facture
+router.get('/invoice/download/:invoiceNumber', authenticateToken, async (req, res) => {
+    try {
+        const invoice = await pool.query(
+            'SELECT * FROM invoices WHERE invoice_number = $1 AND client_id = $2',
+            [req.params.invoiceNumber, req.clientId]
+        );
+        
+        if (invoice.rows.length === 0) {
+            return res.status(404).send('Facture non trouvée');
+        }
+        
+        const filePath = path.join(__dirname, '../public', invoice.rows[0].pdf_path);
+        
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).send('Fichier facture non trouvé');
+        }
+        
+        res.download(filePath, `facture_${invoice.rows[0].invoice_number}.pdf`);
+    } catch (error) {
+        console.error('Erreur:', error);
+        res.status(500).send('Erreur lors du téléchargement');
     }
 });
 

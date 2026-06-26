@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mes formations - Espace Client</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -54,6 +55,11 @@
             text-decoration: none;
             border-radius: 5px;
             margin-top: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #0a5c36;
         }
         .logout-btn {
             background: #e74c3c;
@@ -63,14 +69,31 @@
             border-radius: 5px;
             margin-left: 15px;
         }
+        .logout-btn:hover {
+            background: #c0392b;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .badge-inscrit { background: #3498db; color: white; }
+        .badge-en_cours { background: #f39c12; color: white; }
+        .badge-termine { background: #27ae60; color: white; }
+        .badge-annule { background: #e74c3c; color: white; }
+        body.dark-mode .header { background: #0a5c36; }
+        body.dark-mode .card { background: #1a1a2e; color: #e0e0e0; }
+        body.dark-mode .card-info h3 { color: #27ae60; }
     </style>
 </head>
 <body>
     <div class="header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 0 20px;">
             <h2>Mes formations</h2>
             <div>
-                <a href="/client/dashboard" style="color: white;">Dashboard</a>
+                <a href="/client/dashboard" style="color: white; margin-right: 15px;">Dashboard</a>
                 <a href="/client/logout" class="logout-btn">Déconnexion</a>
             </div>
         </div>
@@ -79,11 +102,22 @@
     <div class="content">
         <h1>Mes formations</h1>
         
+        <!-- DEBUG -->
+        <div style="background: yellow; padding: 10px; margin: 10px 0; border: 2px solid red; color: black;">
+            <strong>DEBUG:</strong><br>
+            Nombre de formations: <%= formations ? formations.length : 0 %>
+        </div>
+        
         <% if (formations && formations.length > 0) { %>
             <p><strong><%= formations.length %></strong> formation(s) trouvée(s)</p>
             
             <% for(var i = 0; i < formations.length; i++) { 
                 var f = formations[i];
+                var statusClass = 'badge-inscrit';
+                var statusText = 'Inscrit';
+                if (f.statut === 'en_cours') { statusClass = 'badge-en_cours'; statusText = 'En cours'; }
+                else if (f.statut === 'termine') { statusClass = 'badge-termine'; statusText = 'Terminé'; }
+                else if (f.statut === 'annule') { statusClass = 'badge-annule'; statusText = 'Annulé'; }
             %>
                 <div class="card">
                     <img src="<%= f.image_url %>" alt="<%= f.title %>">
@@ -93,6 +127,15 @@
                         <p><strong>Niveau:</strong> <%= f.level %></p>
                         <p><strong>Catégorie:</strong> <%= f.category %></p>
                         <p><strong>Inscrit le:</strong> <%= new Date(f.date_inscription).toLocaleDateString() %></p>
+                        <p>
+                            <span class="badge <%= statusClass %>"><%= statusText %></span>
+                            <% if (f.quiz_completed) { %>
+                                <span class="badge" style="background: #27ae60; color: white;">✅ Quiz: <%= f.quiz_score %>%</span>
+                            <% } %>
+                            <% if (f.certificate_generated) { %>
+                                <span class="badge" style="background: #9b59b6; color: white;">🎓 Certificat</span>
+                            <% } %>
+                        </p>
                         <a href="/client/formation/<%= f.formation_id %>/learn" class="btn">
                             <i class="fas fa-play-circle"></i> Accéder à la formation
                         </a>
@@ -104,5 +147,14 @@
             <a href="/formations" class="btn">Voir les formations disponibles</a>
         <% } %>
     </div>
+
+    <script>
+        (function() {
+            const savedDarkMode = localStorage.getItem('darkMode');
+            if (savedDarkMode === null || savedDarkMode === 'true') {
+                document.body.classList.add('dark-mode');
+            }
+        })();
+    </script>
 </body>
 </html>
