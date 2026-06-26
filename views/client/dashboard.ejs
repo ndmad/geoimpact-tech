@@ -11,6 +11,23 @@
     })();
 </script>
 
+<script>
+    // Vérifier si le paiement vient d'être effectué
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment_success') === 'true') {
+        // Afficher un message de succès
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageDiv = document.createElement('div');
+            messageDiv.style.cssText = 'background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #c3e6cb;';
+            messageDiv.innerHTML = '✅ Paiement réussi ! Votre formation a été ajoutée à votre compte.';
+            const container = document.querySelector('.container') || document.querySelector('.dashboard-container');
+            if (container) {
+                container.insertBefore(messageDiv, container.firstChild);
+            }
+        });
+    }
+</script>
+
 <section class="client-dashboard" style="padding: 120px 0 60px;">
     <div class="container">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap;">

@@ -964,10 +964,8 @@ router.post('/api/login', [
 });
 
 // Demande de réinitialisation de mot de passe
-// Demande de réinitialisation de mot de passe
 router.post('/api/forgot-password', async (req, res) => {
     const { email } = req.body;
-    const { sendResetPasswordEmail } = require('../utils/emailService');
     const crypto = require('crypto');
     
     try {
