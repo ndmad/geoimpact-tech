@@ -1,6 +1,8 @@
-node_modules/
 .env
-.en.production
-.env.local
-.DS_Store
+.env.*
+node_modules/
 *.log
+.DS_Store
+public/uploads/
+public/certificates/
+public/invoices/
