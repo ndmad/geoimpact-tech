@@ -37,17 +37,30 @@ router.get('/login', (req, res) => {
     });
 });
 
+// Traitement du login
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
+    
+    console.log('=== ADMIN LOGIN ATTEMPT ===');
+    console.log('Username:', username);
+    console.log('Password:', password);
+    console.log('Env ADMIN_USERNAME:', process.env.ADMIN_USERNAME);
+    console.log('Env ADMIN_PASSWORD:', process.env.ADMIN_PASSWORD ? '[SET]' : '[NOT SET]');
     
     const adminUser = process.env.ADMIN_USERNAME || 'admin';
     const adminPass = process.env.ADMIN_PASSWORD || 'GeoImpact2024!';
     
     if (username === adminUser && password === adminPass) {
+        console.log('✅ Login SUCCESS');
         req.session.user = { username, isAdmin: true };
-        req.flash('success', 'Connexion réussie !');
-        res.redirect('/admin/dashboard');
+        req.session.save((err) => {
+            if (err) console.error('Session save error:', err);
+            res.redirect('/admin/dashboard');
+        });
     } else {
+        console.log('❌ Login FAILED');
+        console.log('Username match:', username === adminUser);
+        console.log('Password match:', password === adminPass);
         req.flash('error', 'Identifiants incorrects');
         res.redirect('/admin/login');
     }
