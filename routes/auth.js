@@ -65,6 +65,7 @@ router.post('/login', (req, res) => {
         res.redirect('/admin/login');
     }
 });
+console.log('✅ routes/auth.js chargé');
 
 router.get('/logout', (req, res) => {
     req.session.destroy();
