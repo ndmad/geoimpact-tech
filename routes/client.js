@@ -11,13 +11,43 @@ const fs = require('fs');
 const { sendWelcomeEmail } = require('../utils/emailService');
 const { notifyNewRegistration } = require('../utils/whatsappService');
 
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+
+// ============ CONFIGURATION DU POOL - CORRIGÉE ============
+let poolConfig;
+
+if (process.env.DATABASE_URL) {
+    console.log('🔵 contact.js - Utilisation de DATABASE_URL');
+    poolConfig = {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+    };
+} else {
+    console.log('🔵 contact.js - Utilisation des variables locales');
+    poolConfig = {
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || 5432,
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME || 'geoimpact_db',
+    };
+}
+
+const pool = new Pool(poolConfig);
+
+// Test de connexion
+pool.connect((err, client, release) => {
+    if (err) {
+        console.error('❌ contact.js - Erreur de connexion:', err.message);
+    } else {
+        console.log('✅ contact.js - Base de données connectée');
+        release();
+    }
 });
+
+// ... reste du code inchangé
+
+
+
 
 const JWT_SECRET = process.env.JWT_SECRET || 'client_secret_key_2024';
 const SALT_ROUNDS = 10;
