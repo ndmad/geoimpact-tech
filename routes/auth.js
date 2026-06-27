@@ -53,23 +53,21 @@ router.post('/login', (req, res) => {
     if (username === adminUser && password === adminPass) {
         console.log('✅ Login SUCCESS');
         req.session.user = { username, isAdmin: true };
+        
+        // Sauvegarder explicitement la session avant de rediriger
         req.session.save((err) => {
-            if (err) console.error('Session save error:', err);
+            if (err) {
+                console.error('❌ Session save error:', err);
+                return res.status(500).send('Erreur de session');
+            }
+            console.log('✅ Session sauvegardée, redirection...');
             res.redirect('/admin/dashboard');
         });
     } else {
         console.log('❌ Login FAILED');
-        console.log('Username match:', username === adminUser);
-        console.log('Password match:', password === adminPass);
         req.flash('error', 'Identifiants incorrects');
         res.redirect('/admin/login');
     }
-});
-console.log('✅ routes/auth.js chargé');
-
-router.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/admin/login');
 });
 
 // ============ DASHBOARD ============

@@ -69,11 +69,12 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: process.env.NODE_ENV === 'production',
+        secure: false,      // ← IMPORTANT: false pour Render (pas de HTTPS interne)
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
         sameSite: 'lax'
-    }
+    },
+    name: 'sessionId'       // ← AJOUTER pour éviter le nom par défaut
 }));
 
 
