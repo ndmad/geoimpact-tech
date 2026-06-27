@@ -51,6 +51,16 @@ const transporter = nodemailer.createTransport({
 // POST envoyer un message
 router.post('/', async (req, res) => {
     console.log('📨 Réception d\'un message de contact:', req.body);
+
+        // Vérifier la connexion
+        try {
+            const test = await pool.query('SELECT NOW()');
+            console.log('✅ Connexion DB OK:', test.rows[0].now);
+        } catch (dbError) {
+            console.error('❌ Erreur DB:', dbError.message);
+            return res.status(500).json({ error: 'Erreur de connexion à la base de données' });
+        }
+        
     
     try {
         const { name, email, phone, subject, message } = req.body;
