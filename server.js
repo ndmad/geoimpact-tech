@@ -59,22 +59,6 @@ app.use((req, res, next) => {
 });
 
 // Ajouter après les middlewares existants
-app.use(session({
-    store: new pgSession({
-        pool: pool,
-        tableName: 'session',
-        createTableIfMissing: true
-    }),
-    secret: process.env.SESSION_SECRET || 'secret_key',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-        secure: process.env.NODE_ENV === 'production',
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000,
-        sameSite: 'lax'
-    }
-}));
 
 // Configuration de session - CORRIGÉE
 app.use(session({
@@ -87,14 +71,13 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false,      // ← IMPORTANT: false pour Render (pas de HTTPS interne)
+        secure: false,      // ← FORCER À false pour Render (HTTP)
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
         sameSite: 'lax'
     },
-    name: 'sessionId'       // ← AJOUTER pour éviter le nom par défaut
+    name: 'sessionId'
 }));
-
 
 app.use(flash());
 app.use((req, res, next) => {
