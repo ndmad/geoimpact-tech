@@ -23,12 +23,11 @@ const port = process.env.PORT || 3000;
 let poolConfig;
 
 if (process.env.DATABASE_URL) {
-    // Pour Render (production) - Utilise DATABASE_URL
+    // Pour Render (production)
     poolConfig = {
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
     };
-    console.log('✅ Utilisation de DATABASE_URL pour Render');
 } else {
     // Pour le développement local
     poolConfig = {
@@ -38,20 +37,9 @@ if (process.env.DATABASE_URL) {
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME || 'geoimpact_db',
     };
-    console.log('✅ Utilisation des variables individuelles pour local');
 }
 
 const pool = new Pool(poolConfig);
-
-// Test de connexion (optionnel)
-pool.connect((err, client, release) => {
-    if (err) {
-        console.error('❌ Erreur de connexion à la base:', err.message);
-    } else {
-        console.log('✅ Base de données connectée avec succès');
-        release();
-    }
-});
 
 
 // Middlewares
@@ -81,13 +69,15 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false,      // ← IMPORTANT: false pour Render (pas de HTTPS interne)
+        secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
         maxAge: 24 * 60 * 60 * 1000,
         sameSite: 'lax'
-    },
-    name: 'sessionId'       // ← AJOUTER pour éviter le nom par défaut
+    }
 }));
+
+// Configuration de session - CORRIGÉE
+
 
 
 app.use(flash());

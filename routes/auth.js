@@ -2,13 +2,38 @@ const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
 
-const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+// ============ CONFIGURATION DU POOL - CORRIGÉE POUR RENDER ============
+let poolConfig;
+
+if (process.env.DATABASE_URL) {
+    // Pour Render (production) - Utilise DATABASE_URL
+    console.log('🔵 auth.js - Utilisation de DATABASE_URL');
+    poolConfig = {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+    };
+} else {
+    // Pour le développement local
+    console.log('🔵 auth.js - Utilisation des variables locales');
+    poolConfig = {
+        host: process.env.DB_HOST || 'localhost',
+        port: process.env.DB_PORT || 5432,
+        user: process.env.DB_USER || 'postgres',
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME || 'geoimpact_db',
+    };
+}
+
+const pool = new Pool(poolConfig);
+
+// Test de connexion
+pool.connect((err, client, release) => {
+    if (err) {
+        console.error('❌ auth.js - Erreur de connexion:', err.message);
+    } else {
+        console.log('✅ auth.js - Base de données connectée');
+        release();
+    }
 });
 
 // Middleware pour vérifier l'authentification
@@ -74,6 +99,8 @@ router.post('/login', (req, res) => {
 
 router.get('/dashboard', requireAuth, async (req, res) => {
     try {
+        console.log('🔵 Dashboard - Récupération des stats...');
+        
         const formations = await pool.query('SELECT COUNT(*) FROM formations');
         const blog = await pool.query('SELECT COUNT(*) FROM blog_posts');
         const messages = await pool.query("SELECT COUNT(*) FROM contact_messages WHERE status = 'pending'");
@@ -86,12 +113,15 @@ router.get('/dashboard', requireAuth, async (req, res) => {
             subscribers: parseInt(subscribers.rows[0].count) || 0
         };
         
+        console.log('📊 Stats:', stats);
+        
         res.render('admin/dashboard', { 
             stats: stats,
             title: 'Dashboard - Administration'
         });
     } catch (error) {
-        console.error('Erreur dashboard:', error);
+        console.error('❌ Erreur dashboard:', error);
+        console.error('❌ Stack:', error.stack);
         res.status(500).send('Erreur serveur: ' + error.message);
     }
 });
@@ -100,9 +130,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
 
 router.get('/formations', requireAuth, async (req, res) => {
     try {
-        console.log('🔵 Route /formations appelée - Session OK');
-        console.log('🔵 User:', req.session.user);
-        
+        console.log('🔵 Route /formations appelée');
         const result = await pool.query('SELECT * FROM formations ORDER BY id');
         console.log('📊 Formations trouvées:', result.rows.length);
         
@@ -114,15 +142,16 @@ router.get('/formations', requireAuth, async (req, res) => {
         });
     } catch (error) {
         console.error('❌ Erreur détaillée:', error);
-        console.error('❌ Stack:', error.stack);
         res.status(500).send('Erreur serveur: ' + error.message);
     }
 });
 
-
-
 router.get('/formations/new', requireAuth, (req, res) => {
-    res.render('admin/formation-form', { formation: null, title: 'Ajouter une formation' });
+    res.render('admin/formation-form', { 
+        formation: null, 
+        title: 'Ajouter une formation',
+        error_msg: req.flash('error')
+    });
 });
 
 router.post('/formations/add', requireAuth, async (req, res) => {
@@ -144,10 +173,17 @@ router.post('/formations/add', requireAuth, async (req, res) => {
 router.get('/formations/edit/:id', requireAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM formations WHERE id = $1', [req.params.id]);
-        if (result.rows.length === 0) return res.status(404).send('Formation non trouvée');
-        res.render('admin/formation-form', { formation: result.rows[0], title: 'Modifier la formation' });
+        if (result.rows.length === 0) {
+            return res.status(404).send('Formation non trouvée');
+        }
+        res.render('admin/formation-form', { 
+            formation: result.rows[0], 
+            title: 'Modifier la formation',
+            error_msg: req.flash('error')
+        });
     } catch (error) {
-        res.status(500).send('Erreur: ' + error.message);
+        console.error('Erreur:', error);
+        res.status(500).send('Erreur serveur: ' + error.message);
     }
 });
 
@@ -172,8 +208,7 @@ router.get('/formations/delete/:id', requireAuth, async (req, res) => {
         const id = req.params.id;
         console.log('🔵 Suppression formation ID:', id);
         
-        const result = await pool.query('DELETE FROM formations WHERE id = $1 RETURNING id', [id]);
-        console.log('📊 Supprimé:', result.rows.length > 0);
+        await pool.query('DELETE FROM formations WHERE id = $1', [id]);
         
         req.flash('success', 'Formation supprimée avec succès');
         res.redirect('/admin/formations');
@@ -194,7 +229,7 @@ router.get('/blog', requireAuth, async (req, res) => {
         
         res.render('admin/blog', { 
             posts: result.rows,
-            title: 'Gestion du blog',  // ← AJOUTER CETTE LIGNE
+            title: 'Gestion du blog',
             success_msg: req.flash('success'),
             error_msg: req.flash('error')
         });
@@ -231,10 +266,17 @@ router.post('/blog/add', requireAuth, async (req, res) => {
 router.get('/blog/edit/:id', requireAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM blog_posts WHERE id = $1', [req.params.id]);
-        if (result.rows.length === 0) return res.status(404).send('Article non trouvé');
-        res.render('admin/blog-form', { post: result.rows[0], title: 'Modifier l\'article' });
+        if (result.rows.length === 0) {
+            return res.status(404).send('Article non trouvé');
+        }
+        res.render('admin/blog-form', { 
+            post: result.rows[0], 
+            title: 'Modifier l\'article',
+            error_msg: req.flash('error')
+        });
     } catch (error) {
-        res.status(500).send('Erreur: ' + error.message);
+        console.error('Erreur:', error);
+        res.status(500).send('Erreur serveur: ' + error.message);
     }
 });
 
@@ -268,7 +310,6 @@ router.get('/blog/delete/:id', requireAuth, async (req, res) => {
 
 // ============ GESTION DES MESSAGES ============
 
-
 router.get('/messages', requireAuth, async (req, res) => {
     try {
         console.log('🔵 Route /messages appelée');
@@ -277,7 +318,7 @@ router.get('/messages', requireAuth, async (req, res) => {
         
         res.render('admin/messages', { 
             messages: result.rows,
-            title: 'Gestion des messages',  // ← AJOUTER CETTE LIGNE
+            title: 'Gestion des messages',
             success_msg: req.flash('success'),
             error_msg: req.flash('error')
         });
@@ -290,12 +331,17 @@ router.get('/messages', requireAuth, async (req, res) => {
 router.get('/messages/view/:id', requireAuth, async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM contact_messages WHERE id = $1', [req.params.id]);
-        if (result.rows.length === 0) return res.status(404).send('Message non trouvé');
+        if (result.rows.length === 0) {
+            return res.status(404).send('Message non trouvé');
+        }
         
         // Marquer comme lu
         await pool.query(`UPDATE contact_messages SET status = 'read' WHERE id = $1`, [req.params.id]);
         
-        res.render('admin/message-view', { message: result.rows[0] });
+        res.render('admin/message-view', { 
+            message: result.rows[0],
+            title: 'Détail du message'
+        });
     } catch (error) {
         console.error('Erreur:', error);
         res.status(500).send('Erreur serveur: ' + error.message);
@@ -306,7 +352,7 @@ router.get('/messages/view/:id', requireAuth, async (req, res) => {
 
 router.get('/enrollments', requireAuth, async (req, res) => {
     try {
-        // Requête qui affiche TOUS les clients avec leurs inscriptions (même sans formation)
+        // Requête qui affiche TOUS les clients avec leurs inscriptions
         const result = await pool.query(`
             SELECT 
                 c.id as client_id,
@@ -351,7 +397,6 @@ router.get('/enrollments', requireAuth, async (req, res) => {
                 });
             }
             
-            // Si l'utilisateur a une formation, l'ajouter
             if (row.enrollment_id) {
                 clientsMap.get(row.client_id).formations.push({
                     enrollment_id: row.enrollment_id,
@@ -445,7 +490,6 @@ router.get('/clients/view/:id', requireAuth, async (req, res) => {
     try {
         const clientId = req.params.id;
         
-        // Récupérer les infos du client
         const clientResult = await pool.query(
             'SELECT id, email, nom, prenom, telephone, entreprise, fonction, created_at, last_login, email_verified FROM clients WHERE id = $1',
             [clientId]
@@ -455,7 +499,6 @@ router.get('/clients/view/:id', requireAuth, async (req, res) => {
             return res.status(404).send('Client non trouvé');
         }
         
-        // Récupérer les formations du client
         const formationsResult = await pool.query(`
             SELECT 
                 cf.*,
@@ -525,20 +568,18 @@ router.post('/clients/edit/:id', requireAuth, async (req, res) => {
     }
 });
 
-// Supprimer un client et toutes ses données associées
+// Supprimer un client
 router.get('/clients/delete/:id', requireAuth, async (req, res) => {
     const clientId = req.params.id;
     
     try {
-        // Vérifier si le client existe
         const client = await pool.query('SELECT id, email FROM clients WHERE id = $1', [clientId]);
         if (client.rows.length === 0) {
             req.flash('error', 'Client non trouvé');
             return res.redirect('/admin/enrollments');
         }
         
-        // Supprimer les données associées (les clés étrangères avec ON DELETE CASCADE le feront automatiquement)
-        // Mais on peut aussi les supprimer explicitement
+        // Supprimer les données associées
         await pool.query('DELETE FROM client_video_progress WHERE client_id = $1', [clientId]);
         await pool.query('DELETE FROM client_quiz_answers WHERE client_id = $1', [clientId]);
         await pool.query('DELETE FROM client_messages WHERE client_id = $1', [clientId]);
@@ -556,48 +597,8 @@ router.get('/clients/delete/:id', requireAuth, async (req, res) => {
     }
 });
 
-const { sendNewFormationNotification } = require('../utils/emailService');
+// ============ EXPORT CSV ============
 
-router.post('/formations/add', requireAuth, async (req, res) => {
-    try {
-        const { title, description, duration, level, category, availability, image_url, price } = req.body;
-        
-        const result = await pool.query(
-            'INSERT INTO formations (title, description, duration, level, category, availability, image_url, price) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id',
-            [title, description, duration, level, category, availability, image_url, price || null]
-        );
-        
-        const formationId = result.rows[0].id;
-        
-        // Envoyer une notification par email à tous les abonnés de la newsletter
-        try {
-            const subscribers = await pool.query('SELECT email FROM newsletter_subscribers WHERE is_active = true');
-            
-            for (const sub of subscribers.rows) {
-                await sendNewFormationNotification(sub.email, title, description, formationId);
-            }
-            console.log(`📧 Notification de nouvelle formation envoyée à ${subscribers.rows.length} abonnés`);
-        } catch (emailError) {
-            console.error('Erreur envoi notifications:', emailError);
-        }
-        
-        // Envoyer une notification push à tous les abonnés
-        await sendPushNotificationToAll(
-            '📚 Nouvelle formation !',
-            `${title} - ${duration} - Niveau ${level}`,
-            `/formations/${formationId}`
-        );
-        
-        req.flash('success', 'Formation ajoutée avec succès !');
-        res.redirect('/admin/formations');
-    } catch (error) {
-        console.error('Erreur:', error);
-        req.flash('error', 'Erreur lors de l\'ajout');
-        res.redirect('/admin/formations/new');
-    }
-});
-
-// Export des clients en CSV
 router.get('/clients/export-csv', requireAuth, async (req, res) => {
     try {
         const result = await pool.query(`
@@ -619,7 +620,6 @@ router.get('/clients/export-csv', requireAuth, async (req, res) => {
             ORDER BY c.created_at DESC
         `);
         
-        // Créer le CSV
         let csv = 'ID,Nom,Prénom,Email,Téléphone,Entreprise,Fonction,Date inscription,Dernière connexion,Email vérifié,Nombre formations\n';
         
         result.rows.forEach(row => {
@@ -636,6 +636,12 @@ router.get('/clients/export-csv', requireAuth, async (req, res) => {
     }
 });
 
+// ============ LOGOUT ============
+
+router.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/admin/login');
+});
 
 module.exports = router;
 module.exports.requireAuth = requireAuth;
