@@ -6,13 +6,11 @@ const nodemailer = require('nodemailer');
 // ============ CONFIGURATION DU POOL ============
 let poolConfig;
 if (process.env.DATABASE_URL) {
-    console.log('🔵 contact.js - Utilisation de DATABASE_URL');
     poolConfig = {
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false }
     };
 } else {
-    console.log('🔵 contact.js - Utilisation des variables locales');
     poolConfig = {
         host: process.env.DB_HOST || 'localhost',
         port: process.env.DB_PORT || 5432,
@@ -24,37 +22,29 @@ if (process.env.DATABASE_URL) {
 
 const pool = new Pool(poolConfig);
 
-pool.connect((err, client, release) => {
-    if (err) {
-        console.error('❌ contact.js - Erreur de connexion:', err.message);
-    } else {
-        console.log('✅ contact.js - Base de données connectée');
-        release();
-    }
-});
-
-// Configuration du transporteur email
+// Configuration du transporteur email avec timeout réduit
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-    }
+    },
+    // ⚡ AJOUTER CES OPTIONS POUR ACCÉLÉRER
+    connectionTimeout: 5000,  // 5 secondes max
+    greetingTimeout: 5000,
+    socketTimeout: 10000,
 });
 
-// POST envoyer un message
+// POST envoyer un message - VERSION OPTIMISÉE
 router.post('/', async (req, res) => {
     console.log('📨 Réception d\'un message de contact:', req.body);
 
+    // Répondre immédiatement au client (pour éviter le timeout)
+    let messageId = null;
+    let emailSent = false;
+
     try {
-        const test = await pool.query('SELECT NOW()');
-        console.log('✅ Connexion DB OK:', test.rows[0].now);
-    } catch (dbError) {
-        console.error('❌ Erreur DB:', dbError.message);
-        return res.status(500).json({ error: 'Erreur de connexion à la base de données' });
-    }
-    
-    try {
+        // 1. Sauvegarder dans PostgreSQL (rapide)
         const { name, email, phone, subject, message } = req.body;
         
         if (!name || !email || !message) {
@@ -70,26 +60,36 @@ router.post('/', async (req, res) => {
         `;
         
         const result = await pool.query(query, [name, email, phone || null, subject || 'general', message]);
-        const messageId = result.rows[0].id;
+        messageId = result.rows[0].id;
         
         console.log(`✅ Message sauvegardé en DB avec l'ID: ${messageId}`);
         
-        // ============================================
-        // 🔍 DEBUG EMAIL - PLACÉ ICI
-        // ============================================
-        console.log('📧 Tentative d\'envoi d\'email à:', email);
-        console.log('📧 EMAIL_USER:', process.env.EMAIL_USER);
-        console.log('📧 EMAIL_PASS défini:', !!process.env.EMAIL_PASS);
-
-        try {
-            await transporter.verify();
-            console.log('✅ Transporter vérifié avec succès');
-        } catch (verifyError) {
-            console.error('❌ Erreur de vérification du transporteur:', verifyError.message);
-        }
-        // ============================================
+        // 2. Envoyer les emails en arrière-plan (ne pas attendre la réponse)
+        // ⚡ NE PAS ATTENDRE L'ENVOI DES EMAILS POUR RÉPONDRE
+        sendEmailsInBackground(name, email, phone, subject, message, messageId);
         
-        // 2. Envoyer email de confirmation à l'utilisateur
+        // 3. Répondre immédiatement au client
+        res.status(201).json({ 
+            success: true,
+            message: 'Message envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.',
+            messageId: messageId,
+            emailSent: false // On ne sait pas encore
+        });
+        
+    } catch (error) {
+        console.error('❌ Erreur lors du traitement du message:', error);
+        res.status(500).json({ 
+            error: 'Une erreur est survenue. Veuillez réessayer.'
+        });
+    }
+});
+
+// ⚡ FONCTION D'ENVOI D'EMAILS EN ARRIÈRE-PLAN
+async function sendEmailsInBackground(name, email, phone, subject, message, messageId) {
+    try {
+        console.log('📧 Envoi des emails en arrière-plan...');
+        
+        // 1. Email de confirmation à l'utilisateur
         const userMailOptions = {
             from: `"GeoImpact Tech" <${process.env.EMAIL_USER}>`,
             to: email,
@@ -105,7 +105,6 @@ router.post('/', async (req, res) => {
                         .header { background: #0a5c36; color: white; padding: 20px; text-align: center; }
                         .content { padding: 20px; background: #f9f9f9; }
                         .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
-                        .btn { display: inline-block; padding: 10px 20px; background: #27ae60; color: white; text-decoration: none; border-radius: 5px; }
                     </style>
                 </head>
                 <body>
@@ -115,26 +114,23 @@ router.post('/', async (req, res) => {
                         </div>
                         <div class="content">
                             <h3>Bonjour ${name},</h3>
-                            <p>Nous vous remercions pour votre message. Notre équipe l'a bien reçu et vous répondra dans les plus brefs délais (généralement sous 48h ouvrées).</p>
-                            
-                            <h4>Récapitulatif de votre demande :</h4>
+                            <p>Nous vous remercions pour votre message. Notre équipe l'a bien reçu et vous répondra dans les plus brefs délais.</p>
+                            <h4>Récapitulatif :</h4>
                             <p><strong>Sujet :</strong> ${subject || 'Non spécifié'}</p>
                             <p><strong>Message :</strong></p>
                             <p style="background: white; padding: 15px; border-left: 4px solid #27ae60;">${message}</p>
-                            
                             <p>Cordialement,<br><strong>L'équipe GeoImpact Tech</strong></p>
                         </div>
                         <div class="footer">
                             <p>© 2024 GeoImpact Tech - Tous droits réservés</p>
-                            <p>Ceci est un message automatique, merci de ne pas y répondre.</p>
                         </div>
                     </div>
                 </body>
                 </html>
             `
         };
-        
-        // 3. Envoyer email de notification à l'admin
+
+        // 2. Email de notification à l'admin
         const adminMailOptions = {
             from: `"GeoImpact Tech Contact" <${process.env.EMAIL_USER}>`,
             to: process.env.EMAIL_USER,
@@ -158,7 +154,7 @@ router.post('/', async (req, res) => {
                             <h2>📬 Nouveau message de contact</h2>
                         </div>
                         <div class="info">
-                            <p><span class="label">ID du message :</span> ${messageId}</p>
+                            <p><span class="label">ID :</span> ${messageId}</p>
                             <p><span class="label">Nom :</span> ${name}</p>
                             <p><span class="label">Email :</span> ${email}</p>
                             <p><span class="label">Téléphone :</span> ${phone || 'Non renseigné'}</p>
@@ -167,8 +163,9 @@ router.post('/', async (req, res) => {
                             <p style="background: white; padding: 15px; border-left: 4px solid #27ae60;">${message}</p>
                         </div>
                         <p>
-                            <a href="http://localhost:3000/admin/messages/${messageId}" style="display: inline-block; padding: 10px 20px; background: #27ae60; color: white; text-decoration: none; border-radius: 5px;">
-                                Voir le message dans l'admin
+                            <a href="https://geoimpact-tech.onrender.com/admin/messages/${messageId}" 
+                               style="display: inline-block; padding: 10px 20px; background: #27ae60; color: white; text-decoration: none; border-radius: 5px;">
+                                Voir le message
                             </a>
                         </p>
                     </div>
@@ -176,52 +173,25 @@ router.post('/', async (req, res) => {
                 </html>
             `
         };
+
+        // Envoyer les emails en parallèle (Promise.all pour plus de vitesse)
+        await Promise.all([
+            transporter.sendMail(userMailOptions).catch(err => console.error('❌ Erreur email utilisateur:', err.message)),
+            transporter.sendMail(adminMailOptions).catch(err => console.error('❌ Erreur email admin:', err.message))
+        ]);
         
-        let emailErrors = [];
-        
-        try {
-            await transporter.sendMail(userMailOptions);
-            console.log('✅ Email de confirmation envoyé à', email);
-        } catch (emailError) {
-            console.error('❌ Erreur envoi email confirmation:', emailError.message);
-            emailErrors.push('confirmation');
-        }
-        
-        try {
-            await transporter.sendMail(adminMailOptions);
-            console.log('✅ Email notification admin envoyé');
-        } catch (emailError) {
-            console.error('❌ Erreur envoi email admin:', emailError.message);
-            emailErrors.push('admin');
-        }
-        
-        res.status(201).json({ 
-            success: true,
-            message: 'Message envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.',
-            messageId: messageId,
-            emailStatus: emailErrors.length === 0 ? 'sent' : 'partial'
-        });
+        console.log('✅ Emails envoyés avec succès');
         
     } catch (error) {
-        console.error('❌ Erreur lors du traitement du message:', error);
-        
-        const errorMessage = process.env.NODE_ENV === 'development' 
-            ? error.message 
-            : 'Une erreur est survenue lors de l\'envoi du message. Veuillez réessayer ou nous contacter directement par téléphone.';
-        
-        res.status(500).json({ 
-            error: errorMessage,
-            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
-        });
+        console.error('❌ Erreur envoi emails:', error.message);
     }
-});
+}
 
-// GET tous les messages (route admin)
+// ============ ROUTES ADMIN (inchangées) ============
+
 router.get('/admin/messages', async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM contact_messages ORDER BY created_at DESC'
-        );
+        const result = await pool.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
         res.json(result.rows);
     } catch (error) {
         console.error('Erreur:', error);
@@ -229,13 +199,9 @@ router.get('/admin/messages', async (req, res) => {
     }
 });
 
-// GET un message spécifique (route admin)
 router.get('/admin/messages/:id', async (req, res) => {
     try {
-        const result = await pool.query(
-            'SELECT * FROM contact_messages WHERE id = $1',
-            [req.params.id]
-        );
+        const result = await pool.query('SELECT * FROM contact_messages WHERE id = $1', [req.params.id]);
         if (result.rows.length === 0) {
             return res.status(404).json({ error: 'Message non trouvé' });
         }
@@ -246,7 +212,6 @@ router.get('/admin/messages/:id', async (req, res) => {
     }
 });
 
-// PUT mettre à jour le statut d'un message (route admin)
 router.put('/admin/messages/:id/status', async (req, res) => {
     const { status } = req.body;
     const validStatuses = ['pending', 'read', 'replied', 'archived'];

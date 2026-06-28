@@ -68,4 +68,71 @@
     </div>
 </section>
 
+<!-- Dans le formulaire de contact, ajoutez ce script -->
+<script>
+    document.getElementById('contactForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Récupérer le bouton
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // Désactiver le bouton et afficher le chargement
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
+        
+        // Récupérer les données du formulaire
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        
+        try {
+            const response = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                // Succès
+                submitBtn.innerHTML = '✅ Envoyé !';
+                submitBtn.style.background = '#27ae60';
+                
+                // Afficher un message de succès
+                const successDiv = document.createElement('div');
+                successDiv.style.cssText = 'background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #c3e6cb;';
+                successDiv.innerHTML = '✅ ' + result.message;
+                this.prepend(successDiv);
+                
+                // Réinitialiser le formulaire après 3 secondes
+                setTimeout(() => {
+                    this.reset();
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.style.background = '';
+                    // Supprimer le message de succès
+                    successDiv.remove();
+                }, 3000);
+            } else {
+                // Erreur
+                submitBtn.innerHTML = '❌ Erreur';
+                submitBtn.style.background = '#e74c3c';
+                
+                alert('❌ ' + (result.error || 'Une erreur est survenue'));
+                
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.style.background = '';
+                }, 3000);
+            }
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Une erreur est survenue. Veuillez réessayer.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+    </script>
 <%- include('partials/footer') %>
