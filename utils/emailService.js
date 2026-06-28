@@ -1,6 +1,10 @@
 // utils/emailService.js
 const nodemailer = require('nodemailer');
 
+console.log('📧 EMAIL_USER configuré:', process.env.EMAIL_USER ? '✅ OUI' : '❌ NON');
+console.log('📧 EMAIL_PASS configuré:', process.env.EMAIL_PASS ? '✅ OUI' : '❌ NON');
+
+
 // Configuration du transporteur
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -10,14 +14,16 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Vérifier la connexion email
+// Vérifier la connexion email avec plus de logs
 transporter.verify((error, success) => {
     if (error) {
-        console.log('⚠️ Email non configuré - Les messages seront uniquement sauvegardés en DB');
+        console.error('❌ Erreur de connexion email:', error.message);
+        console.error('❌ Détails:', error);
     } else {
         console.log('✅ Email configuré avec succès');
     }
 });
+
 
 // ============ EMAIL DE CONFIRMATION D'ACHAT ============
 async function sendPurchaseConfirmation(userEmail, userName, formationTitle, price, priceFCFA) {

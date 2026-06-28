@@ -3,9 +3,8 @@ const router = express.Router();
 const { Pool } = require('pg');
 const nodemailer = require('nodemailer');
 
-// ============ CONFIGURATION DU POOL - CORRIGÉE ============
+// ============ CONFIGURATION DU POOL ============
 let poolConfig;
-
 if (process.env.DATABASE_URL) {
     console.log('🔵 contact.js - Utilisation de DATABASE_URL');
     poolConfig = {
@@ -25,7 +24,6 @@ if (process.env.DATABASE_URL) {
 
 const pool = new Pool(poolConfig);
 
-// Test de connexion
 pool.connect((err, client, release) => {
     if (err) {
         console.error('❌ contact.js - Erreur de connexion:', err.message);
@@ -34,10 +32,6 @@ pool.connect((err, client, release) => {
         release();
     }
 });
-
-// ... reste du code inchangé
-
-
 
 // Configuration du transporteur email
 const transporter = nodemailer.createTransport({
@@ -52,27 +46,23 @@ const transporter = nodemailer.createTransport({
 router.post('/', async (req, res) => {
     console.log('📨 Réception d\'un message de contact:', req.body);
 
-        // Vérifier la connexion
-        try {
-            const test = await pool.query('SELECT NOW()');
-            console.log('✅ Connexion DB OK:', test.rows[0].now);
-        } catch (dbError) {
-            console.error('❌ Erreur DB:', dbError.message);
-            return res.status(500).json({ error: 'Erreur de connexion à la base de données' });
-        }
-        
+    try {
+        const test = await pool.query('SELECT NOW()');
+        console.log('✅ Connexion DB OK:', test.rows[0].now);
+    } catch (dbError) {
+        console.error('❌ Erreur DB:', dbError.message);
+        return res.status(500).json({ error: 'Erreur de connexion à la base de données' });
+    }
     
     try {
         const { name, email, phone, subject, message } = req.body;
         
-        // Validation basique
         if (!name || !email || !message) {
             return res.status(400).json({ 
                 error: 'Veuillez remplir tous les champs obligatoires (nom, email, message)' 
             });
         }
         
-        // 1. Sauvegarder dans PostgreSQL
         const query = `
             INSERT INTO contact_messages (name, email, phone, subject, message, status, created_at)
             VALUES ($1, $2, $3, $4, $5, 'pending', NOW())
@@ -83,6 +73,21 @@ router.post('/', async (req, res) => {
         const messageId = result.rows[0].id;
         
         console.log(`✅ Message sauvegardé en DB avec l'ID: ${messageId}`);
+        
+        // ============================================
+        // 🔍 DEBUG EMAIL - PLACÉ ICI
+        // ============================================
+        console.log('📧 Tentative d\'envoi d\'email à:', email);
+        console.log('📧 EMAIL_USER:', process.env.EMAIL_USER);
+        console.log('📧 EMAIL_PASS défini:', !!process.env.EMAIL_PASS);
+
+        try {
+            await transporter.verify();
+            console.log('✅ Transporter vérifié avec succès');
+        } catch (verifyError) {
+            console.error('❌ Erreur de vérification du transporteur:', verifyError.message);
+        }
+        // ============================================
         
         // 2. Envoyer email de confirmation à l'utilisateur
         const userMailOptions = {
@@ -172,7 +177,6 @@ router.post('/', async (req, res) => {
             `
         };
         
-        // Essayer d'envoyer les emails (mais ne pas bloquer si ça échoue)
         let emailErrors = [];
         
         try {
@@ -191,7 +195,6 @@ router.post('/', async (req, res) => {
             emailErrors.push('admin');
         }
         
-        // Réponse au client
         res.status(201).json({ 
             success: true,
             message: 'Message envoyé avec succès ! Nous vous répondrons dans les plus brefs délais.',
@@ -202,7 +205,6 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.error('❌ Erreur lors du traitement du message:', error);
         
-        // Envoyer une erreur détaillée selon l'environnement
         const errorMessage = process.env.NODE_ENV === 'development' 
             ? error.message 
             : 'Une erreur est survenue lors de l\'envoi du message. Veuillez réessayer ou nous contacter directement par téléphone.';
