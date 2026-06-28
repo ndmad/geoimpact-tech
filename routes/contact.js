@@ -24,27 +24,28 @@ if (process.env.DATABASE_URL) {
 
 const pool = new Pool(poolConfig);
 
-pool.connect((err, client, release) => {
-    if (err) {
-        console.error('❌ contact.js - Erreur de connexion:', err.message);
-    } else {
-        console.log('✅ contact.js - Base de données connectée');
-        release();
-    }
-});
-
-// Configuration du transporteur email
+// Configuration du transporteur email avec timeout réduit
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
-    }
+    },
+    // ⚡ AJOUTER CES OPTIONS POUR ACCÉLÉRER
+    connectionTimeout: 5000,  // 5 secondes max
+    greetingTimeout: 5000,
+    socketTimeout: 10000,
 });
+
+
 
 // POST envoyer un message
 router.post('/', async (req, res) => {
     console.log('📨 Réception d\'un message de contact:', req.body);
+
+    // Répondre immédiatement au client (pour éviter le timeout)
+    let messageId = null;
+    let emailSent = false;
 
     try {
         const test = await pool.query('SELECT NOW()');
@@ -73,6 +74,7 @@ router.post('/', async (req, res) => {
         const messageId = result.rows[0].id;
         
         console.log(`✅ Message sauvegardé en DB avec l'ID: ${messageId}`);
+
         
         // ============================================
         // 🔍 DEBUG EMAIL - PLACÉ ICI
