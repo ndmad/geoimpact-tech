@@ -6,8 +6,11 @@ console.log('📧 EMAIL_PASS configuré:', process.env.EMAIL_PASS ? '✅ OUI' : 
 
 
 // Configuration du transporteur
+// utils/emailService.js - Version avec port alternatif
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,  // ← Utiliser 587 au lieu de 465
+    secure: false,  // ← false pour TLS
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
