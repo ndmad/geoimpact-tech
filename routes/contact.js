@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
-const nodemailer = require('nodemailer');
+const sgMail = require('@sendgrid/mail');
 
 // ============ CONFIGURATION DU POOL ============
 let poolConfig;
@@ -22,29 +22,16 @@ if (process.env.DATABASE_URL) {
 
 const pool = new Pool(poolConfig);
 
-// ============ CONFIGURATION EMAIL ============
-console.log('📧 === CONFIGURATION EMAIL ===');
-console.log('📧 EMAIL_USER:', process.env.EMAIL_USER);
-console.log('📧 EMAIL_PASS défini:', process.env.EMAIL_PASS ? '✅ OUI' : '❌ NON');
+// ============ CONFIGURATION SENDGRID ============
+console.log('📧 === CONFIGURATION SENDGRID ===');
+console.log('📧 SENDGRID_API_KEY défini:', process.env.SENDGRID_API_KEY ? '✅ OUI' : '❌ NON');
 
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    connectionTimeout: 5000,
-    greetingTimeout: 5000,
-    socketTimeout: 10000,
-});
-
-transporter.verify((error, success) => {
-    if (error) {
-        console.error('❌ Erreur de vérification du transporteur:', error.message);
-    } else {
-        console.log('✅ Transporter vérifié avec succès');
-    }
-});
+if (process.env.SENDGRID_API_KEY) {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    console.log('✅ SendGrid configuré avec succès');
+} else {
+    console.log('⚠️ SendGrid non configuré - Les emails ne seront pas envoyés');
+}
 
 // ============ ROUTE PRINCIPALE ============
 router.post('/', async (req, res) => {
@@ -54,7 +41,6 @@ router.post('/', async (req, res) => {
     try {
         const { name, email, phone, subject, message } = req.body;
         
-        // Validation
         if (!name || !email || !message) {
             return res.status(400).json({ 
                 error: 'Veuillez remplir tous les champs obligatoires' 
@@ -72,11 +58,14 @@ router.post('/', async (req, res) => {
         
         console.log(`✅ Message sauvegardé en DB avec l'ID: ${messageId}`);
         
-        // Envoyer les emails en arrière-plan
-        console.log('📧 Lancement de l\'envoi des emails en arrière-plan...');
-        sendEmailsInBackground(name, email, phone, subject, message, messageId);
+        // Envoyer les emails en arrière-plan (uniquement si SendGrid est configuré)
+        if (process.env.SENDGRID_API_KEY) {
+            console.log('📧 Lancement de l\'envoi des emails via SendGrid...');
+            sendEmailsWithSendGrid(name, email, phone, subject, message, messageId);
+        } else {
+            console.log('⚠️ SendGrid non configuré - Aucun email envoyé');
+        }
         
-        // Réponse immédiate
         res.status(201).json({ 
             success: true,
             message: 'Message envoyé avec succès !',
@@ -89,17 +78,17 @@ router.post('/', async (req, res) => {
     }
 });
 
-// ============ ENVOI D'EMAILS EN ARRIÈRE-PLAN ============
-async function sendEmailsInBackground(name, email, phone, subject, message, messageId) {
-    console.log('📧 === DÉBUT ENVOI EMAILS ===');
+// ============ ENVOI D'EMAILS AVEC SENDGRID ============
+async function sendEmailsWithSendGrid(name, email, phone, subject, message, messageId) {
+    console.log('📧 === DÉBUT ENVOI EMAILS AVEC SENDGRID ===');
     console.log('📧 Destinataire client:', email);
     console.log('📧 Destinataire admin:', process.env.EMAIL_USER);
     
     try {
         // 1. Email au client
-        const userMailOptions = {
-            from: `"GeoImpact Tech" <${process.env.EMAIL_USER}>`,
+        const clientMsg = {
             to: email,
+            from: process.env.EMAIL_USER || 'contact@geoimpacttech.com',
             subject: 'Confirmation de votre message - GeoImpact Tech',
             html: `
                 <h2>Merci pour votre message, ${name} !</h2>
@@ -111,9 +100,9 @@ async function sendEmailsInBackground(name, email, phone, subject, message, mess
         };
 
         // 2. Email à l'admin
-        const adminMailOptions = {
-            from: `"GeoImpact Tech" <${process.env.EMAIL_USER}>`,
-            to: process.env.EMAIL_USER,
+        const adminMsg = {
+            to: process.env.EMAIL_USER || 'contact@geoimpacttech.com',
+            from: process.env.EMAIL_USER || 'contact@geoimpacttech.com',
             subject: `📬 Nouveau message de contact - ${name}`,
             html: `
                 <h2>Nouveau message de contact</h2>
@@ -127,19 +116,19 @@ async function sendEmailsInBackground(name, email, phone, subject, message, mess
             `
         };
 
-        console.log('📧 Envoi des emails...');
+        console.log('📧 Envoi des emails via SendGrid...');
         
         // Envoyer les deux emails
         await Promise.all([
-            transporter.sendMail(userMailOptions).then(() => {
+            sgMail.send(clientMsg).then(() => {
                 console.log(`✅ Email client envoyé à ${email}`);
             }).catch(err => {
-                console.error(`❌ Erreur email client: ${err.message}`);
+                console.error(`❌ Erreur email client: ${err.response?.body || err.message}`);
             }),
-            transporter.sendMail(adminMailOptions).then(() => {
+            sgMail.send(adminMsg).then(() => {
                 console.log(`✅ Email admin envoyé à ${process.env.EMAIL_USER}`);
             }).catch(err => {
-                console.error(`❌ Erreur email admin: ${err.message}`);
+                console.error(`❌ Erreur email admin: ${err.response?.body || err.message}`);
             })
         ]);
         
@@ -150,7 +139,7 @@ async function sendEmailsInBackground(name, email, phone, subject, message, mess
     }
 }
 
-// ============ ROUTES ADMIN ============
+// ============ ROUTES ADMIN (inchangées) ============
 router.get('/admin/messages', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
